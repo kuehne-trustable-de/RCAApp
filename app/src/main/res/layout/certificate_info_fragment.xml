@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".NewCAFragment_1">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Certificate Info"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+    <GridLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:alignmentMode="alignBounds"
+        android:columnCount="2"
+        android:columnOrderPreserved="false"
+
+        android:useDefaultMargins="true">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Subject" />
+
+        <TextView
+            android:id="@+id/txtCertInfoX500Subject"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:text="" />
+
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Serial" />
+
+        <TextView
+            android:id="@+id/txtCertInfoSerial"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:text="" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="2"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Valid from" />
+
+        <TextView
+            android:id="@+id/txtCertInfoValidFrom"
+            android:layout_height="wrap_content"
+            android:layout_row="2"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:inputType="date"
+            android:text="" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="3"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Valid to" />
+
+        <TextView
+            android:id="@+id/txtCertInfoValidTo"
+            android:layout_height="wrap_content"
+            android:layout_row="3"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:inputType="date"
+            android:text="" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="4"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="CRL expiry" />
+
+        <TextView
+            android:id="@+id/txtCertInfoCrlExpiry"
+            android:layout_height="wrap_content"
+            android:layout_row="4"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:inputType="date"
+            android:text="" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="5"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="#Issued Certs" />
+
+        <TextView
+            android:id="@+id/txtCertInfoIssuedCerts"
+            android:layout_height="wrap_content"
+            android:layout_row="5"
+            android:layout_column="1"
+            android:layout_gravity="start|top"
+            android:text="" />
+
+
+
+        <Space
+            android:layout_row="10"
+            android:layout_columnSpan="2"
+            android:layout_gravity="fill" />
+    </GridLayout>
+
+
+    <GridLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:alignmentMode="alignBounds"
+        android:columnCount="3"
+        android:columnOrderPreserved="false"
+
+        android:useDefaultMargins="true">
+
+        <Button
+            android:id="@+id/btnShowQR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="@string/showQR" />
+
+        <Button
+            android:id="@+id/btnIssueCRL"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_gravity="end"
+            android:text="@string/issueCRL" />
+
+        <Button
+            android:id="@+id/btnScanCSR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="2"
+            android:layout_gravity="end"
+            android:text="@string/scanCSR" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="2"
+            android:layout_gravity="end"
+            android:text="@string/cancel" />
+    </GridLayout>
+
+</GridLayout>
+

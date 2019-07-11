@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".QRShowFragment">
+
+    <TextView
+        android:id="@+id/txtQRCertificateInfo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="TextView" />
+
+    <ImageView
+        android:id="@+id/imageQRCertificate"
+        android:layout_width="400dp"
+        android:layout_height="400dp"
+        android:contentDescription="@string/qrCodeCert"
+        android:src="@android:drawable/presence_busy" />
+
+    <Button
+        android:id="@+id/buttonQRCancel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/cancel" />
+</LinearLayout>

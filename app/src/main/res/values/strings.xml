@@ -1,0 +1,40 @@
+<resources>
+
+    <string name="app_name">RCAApp</string>
+    <string name="action_settings">Settings</string>
+
+    <string-array name="key_algo_length_array">
+        <item>Curve 25519</item>
+        <item>RSA 2048</item>
+        <item>RSA 4096</item>
+    </string-array>
+
+    <string-array name="key_validity_array">
+        <item>1 year</item>
+        <item>2 years</item>
+        <item>4 years</item>
+    </string-array>
+
+    <string-array name="quorum_array">
+        <item>1 of 4</item>
+        <item>2 of 4</item>
+        <item>3 of 4</item>
+        <item>4 of 4</item>
+    </string-array>
+
+    <string name="qrCodeCert">QR code of the selected certificate</string>
+
+    <string name="showQR">Show QRCode</string>
+    <string name="issueCRL">Issue CRL</string>
+    <string name="scanCSR">Scan CSR</string>
+
+
+    <string name="submit">Submit</string>
+    <string name="next">Next</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+
+</resources>

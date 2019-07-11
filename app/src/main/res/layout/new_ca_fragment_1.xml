@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"     xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".NewCAFragment_1">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Root CA 1/2"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+    <GridLayout
+
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+
+        android:alignmentMode="alignBounds"
+        android:columnCount="2"
+        android:columnOrderPreserved="false"
+
+        android:useDefaultMargins="true">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Size" />
+
+        <Spinner
+            android:id="@+id/spinnerKeyAlgo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:entries="@array/key_algo_length_array" />
+
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Validity" />
+
+        <Spinner
+            android:id="@+id/spinnerValidity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:entries="@array/key_validity_array" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="2"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Subject" />
+
+        <EditText
+            android:id="@+id/txtCsrPEM"
+            android:layout_width="match_parent"
+            android:layout_height="122dp"
+            android:layout_row="2"
+            android:layout_column="1"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:singleLine="false"
+            android:text="CN=trustable Root CA, C=DE" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="3"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Quorum" />
+
+        <Spinner
+            android:id="@+id/spinnerQuorum"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_row="3"
+            android:layout_column="1"
+            android:entries="@array/quorum_array" />
+
+
+        <Space
+            android:layout_row="3"
+            android:layout_columnSpan="2"
+            android:layout_gravity="fill" />
+    </GridLayout>
+
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal" >
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.25" />
+
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.375"
+            android:text="@string/next" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.375"
+            android:text="@string/cancel" />
+    </LinearLayout>
+</GridLayout>
+
