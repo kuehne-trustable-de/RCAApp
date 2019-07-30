@@ -1,36 +1,37 @@
 package eu.trustable.rcaapp;
 
-import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import androidx.fragment.app.Fragment;
 
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.TextView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
+import com.unnamed.b.atv.model.TreeNode;
+import com.unnamed.b.atv.view.AndroidTreeView;
+
+import eu.trustable.rcaapp.holder.IssuingCertificateItemHolder;
+import eu.trustable.rcaapp.holder.RootCertificateItemHolder;
 
 public class MainActivity extends AppCompatActivity {
 
     static final String TAG = "MainActivity";
 
-    private Listener mListener;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        PersistentModel.read(getApplicationContext());
+        PersistentModel pm = PersistentModel.read(getApplicationContext());
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -50,15 +51,58 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        final RecyclerView recyclerView = (RecyclerView) findViewById(R.id.certList);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        TreeNode root = TreeNode.root();
 
-        DividerItemDecoration dividerItemDecoration = new DividerItemDecoration(recyclerView.getContext(),DividerItemDecoration.VERTICAL);
+        for( RootCertificateItem rci: pm.getRootCertList()){
+            TreeNode rootCA = new TreeNode(rci);
+            rootCA.setClickListener(nodeRootClickListener);
+            rootCA.setLongClickListener(nodeRootLongClickListener);
 
-        recyclerView.addItemDecoration(dividerItemDecoration);
-        recyclerView.setAdapter(new ItemAdapter(this, PersistentModel.getInstance()));
+            rootCA.setViewHolder(new RootCertificateItemHolder(this));
+
+            for( IssuedCertificateItem ici: rci.getIssuedCertList()){
+
+                TreeNode issuingCA = new TreeNode(ici);
+                issuingCA.setViewHolder(new IssuingCertificateItemHolder(this));
+                root.addChildren(issuingCA);
+            }
+
+            root.addChild(rootCA);
+        }
+
+        final RelativeLayout containerView = (RelativeLayout) findViewById(R.id.container);
+
+        AndroidTreeView tView = new AndroidTreeView(this, root);
+        containerView.addView(tView.getView());
 
     }
+
+    private TreeNode.TreeNodeClickListener nodeRootClickListener = new TreeNode.TreeNodeClickListener() {
+        @Override
+        public void onClick(TreeNode node, Object value) {
+
+            for (TreeNode n : node.getChildren()) {
+                n.setExpanded( !n.isExpanded());
+                Log.d(TAG, "expanding node " + n.isExpanded());
+            }
+
+            CertificateItem certItem = (CertificateItem) value;
+            Toast.makeText( node.getViewHolder().getView().getContext(), "Short click: " + certItem.getSubject() + ",  has children " + node.getChildren().size(), Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    private TreeNode.TreeNodeLongClickListener nodeRootLongClickListener = new TreeNode.TreeNodeLongClickListener() {
+        @Override
+        public boolean onLongClick(TreeNode node, Object value) {
+            CertificateItem certItem = (CertificateItem) value;
+            Toast.makeText( node.getViewHolder().getView().getContext(), "Long click: " + certItem.getSubject(), Toast.LENGTH_SHORT).show();
+
+            CertificateInfoFragment certInfoFrag = CertificateInfoFragment.newInstance(certItem.getCertId());
+            certInfoFrag.show(getSupportFragmentManager(), "tag");
+
+            return true;
+        }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -82,81 +126,37 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-    public interface Listener {
-        void onItemClicked(int position);
-    }
+        Log.d(TAG, "onActivityResult: " + requestCode + " / " + resultCode);
 
-    private class ViewHolder extends RecyclerView.ViewHolder {
+        super.onActivityResult(requestCode, resultCode, data);
 
-        final TextView caListItemSubject;
-        final TextView caListItemExpiresOn;
-        final TextView caListItemCRLExpiresOn;
+        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+        if(result != null) {
 
-        final PersistentModel pm;
-
-        ViewHolder(View itemView, PersistentModel pmArg) {
-
-            super(itemView);
-            this.pm = pmArg;
-
-            caListItemSubject = (TextView) itemView.findViewById(R.id.caListItemSubject);
-            caListItemExpiresOn = (TextView) itemView.findViewById(R.id.caListItemExpiresOn);
-            caListItemCRLExpiresOn = (TextView) itemView.findViewById(R.id.caListItemCRLExpiresOn);
-
-            caListItemSubject.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-
-                    int nItem = getAdapterPosition();
-                    if( nItem > 0) {
-                        String certId = pm.getRootCertList().get(nItem).certId;
-
-                        CertificateInfoFragment certInfoFrag = CertificateInfoFragment.newInstance(certId);
-                        certInfoFrag.show(getSupportFragmentManager(), "tag");
-                    }
+            Log.d(TAG, "forwarding onActivityResult to ScanCSRFragment");
+            for (Fragment fragment : getSupportFragmentManager().getFragments()) {
+                Log.d(TAG, "calling onActivityResult for " + fragment.getTag());
+                fragment.onActivityResult(requestCode, resultCode, data);
+            }
 /*
-                    if (mListener != null) {
-                        mListener.onItemClicked(getAdapterPosition());
-                    }
+            if( fragment != null) {
+                fragment.onActivityResult(requestCode, resultCode, data);
+            } else {
+                Log.d(TAG, "findFragmentByTag('scanCSRFragmentTag') failed");
+            }
 */
-                }
-            });
-        }
-
-    }
-
-    private class ItemAdapter extends RecyclerView.Adapter<ViewHolder> {
-
-        private PersistentModel pm;
-        private LayoutInflater mInflater;
-
-        ItemAdapter(Context context, PersistentModel pm) {
-            this.mInflater = LayoutInflater.from(context);
-            this.pm = pm;
-        }
-
-        @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = mInflater.inflate(R.layout.fragment_item_list_dialog_item, parent, false);
-            return new ViewHolder(view, pm);
-
- //           return new ViewHolder(LayoutInflater.from(parent.getContext()), parent);
-        }
-
-        @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            Log.d(TAG, "onBindViewHolder called for item " + position);
-            RootCertificateItem rcItem = pm.getRootCertList().get(position);
-            holder.caListItemSubject.setText(rcItem.subject);
-            holder.caListItemExpiresOn.setText("Foo");
-            holder.caListItemCRLExpiresOn.setText("Bar");
-        }
-
-        @Override
-        public int getItemCount() {
-            Log.d(TAG, "getItemCount return " + pm.getRootCertList().size());
-            return pm.getRootCertList().size();
+                /*
+            if(result.getContents() == null) {
+                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
+            } else {
+                Toast.makeText(this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
+            }
+*/
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
         }
 
     }

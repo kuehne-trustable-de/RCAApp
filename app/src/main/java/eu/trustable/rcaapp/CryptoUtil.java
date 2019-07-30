@@ -93,8 +93,7 @@ public class CryptoUtil {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance(keyAlgo, BC);
         keyGen.initialize(keyLength, random);
 
-        KeyPair pair = keyGen.generateKeyPair();
-        return pair;
+        return keyGen.generateKeyPair();
     }
 
     public KeyPair createKeyPairEC25519() throws NoSuchProviderException, NoSuchAlgorithmException, InvalidAlgorithmParameterException {
@@ -105,9 +104,7 @@ public class CryptoUtil {
 
         KeyPairGenerator g = KeyPairGenerator.getInstance("ECDSA", "BC");
         g.initialize(ecParameterSpec, random);
-        KeyPair pair = g.generateKeyPair();
-
-        return pair;
+        return g.generateKeyPair();
     }
 
     public X509Certificate buildSelfSignedCertificate(KeyPair pair, X500Name subject, int validityDays, String keyTypeLength)
@@ -190,15 +187,15 @@ public class CryptoUtil {
         return issuedCertificate;
     }
 
+/*
+    public PKCS10CertificationRequest convertPemToPKCS10CertificationRequest(String pem) {
 
-    private PKCS10CertificationRequest convertPemToPKCS10CertificationRequest(String pem) {
-        Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
         PKCS10CertificationRequest csr = null;
         ByteArrayInputStream pemStream = null;
         try {
             pemStream = new ByteArrayInputStream(pem.getBytes("UTF-8"));
         } catch (UnsupportedEncodingException ex) {
-            Log.e(TAG,"UnsupportedEncodingException, convertPemToPublicKey", ex);
+            Log.e(TAG,"UnsupportedEncodingException in convertPemToPKCS10CertificationRequest", ex);
         }
 
         Reader pemReader = new BufferedReader(new InputStreamReader(pemStream));
@@ -207,18 +204,49 @@ public class CryptoUtil {
         try {
             Object parsedObj = pemParser.readObject();
 
-            System.out.println("PemParser returned: " + parsedObj);
+            Log.d(TAG, "PemParser returned: " + parsedObj);
 
             if (parsedObj instanceof PKCS10CertificationRequest) {
                 csr = (PKCS10CertificationRequest) parsedObj;
 
             }
         } catch (IOException ex) {
-            Log.e(TAG,"IOException, convertPemToPublicKey", ex);
+            Log.e(TAG,"IOException, convertPemToPKCS10CertificationRequest", ex);
         }
 
         return csr;
     }
+*/
+
+    public PKCS10CertificationRequest convertPemToPKCS10CertificationRequest(String pem) throws IOException {
+
+        Log.d(TAG, "converting PEM: " + pem);
+
+        PKCS10CertificationRequest csr = null;
+        ByteArrayInputStream pemStream = new ByteArrayInputStream(pem.getBytes("UTF-8"));
+
+        Reader pemReader = new BufferedReader(new InputStreamReader(pemStream));
+        PEMParser pemParser = new PEMParser(pemReader);
+
+        try {
+            Object parsedObj = pemParser.readObject();
+
+            Log.d(TAG, "PemParser returned: " + parsedObj);
+
+            if (parsedObj == null) {
+                throw new IOException("No PEM content found");
+            } else if (parsedObj instanceof PKCS10CertificationRequest) {
+                csr = (PKCS10CertificationRequest) parsedObj;
+            } else {
+                throw new IOException("Unexpected content of type " + parsedObj.getClass().getName());
+            }
+
+            return csr;
+        }catch(org.bouncycastle.util.encoders.DecoderException de){
+            throw new IOException("Problem parsing PEM content " + de.getLocalizedMessage());
+        }
+    }
+
 
     public X509Certificate getCertificateFromBytes(byte[] certBytes) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");

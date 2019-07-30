@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PersistentModel implements Serializable {
+class PersistentModel implements Serializable {
 
     /**
      *
@@ -28,13 +28,13 @@ public class PersistentModel implements Serializable {
 
     private static final String TAG = "PersistentModel";
 
-    static final String defaultFilename = "RCA_Data.json";
+    private static final String defaultFilename = "RCA_Data.json";
     private static File storageFile;
 
     private static PersistentModel _instance = new PersistentModel();
 
     @JsonProperty
-    private List<RootCertificateItem> rcList = new ArrayList<RootCertificateItem>();
+    private List<RootCertificateItem> rcList = new ArrayList<>();
 
     static PersistentModel getInstance(){
         return _instance;
@@ -55,7 +55,6 @@ public class PersistentModel implements Serializable {
         if( storageFile.exists() && storageFile.canRead()){
             try {
                 _instance = mapper.readValue(storageFile, PersistentModel.class);
-                storageFile = storageFile;
                 Log.d(TAG, "Successfully read file '" + storageFile.getAbsolutePath());
                 StringWriter sw = new StringWriter();
                 mapper.writeValue(sw ,_instance);
@@ -85,7 +84,7 @@ public class PersistentModel implements Serializable {
 
     public RootCertificateItem findByCertId(String certId){
         for( RootCertificateItem rci: rcList){
-            if( rci.certId == certId){
+            if( rci.getCertId().equals(certId)){
                 return rci;
             }
         }
@@ -95,6 +94,6 @@ public class PersistentModel implements Serializable {
     public String addKeyAndCertificate(KeyPair kp, X509Certificate cert, int N, int M) throws IOException {
         RootCertificateItem rci = new RootCertificateItem(kp, cert, N, M);
         rcList.add(rci);
-        return rci.certId;
+        return rci.getCertId();
     }
 }

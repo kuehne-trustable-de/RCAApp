@@ -21,6 +21,8 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.bouncycastle.asn1.x500.X500Name;
 
+import eu.trustable.rcaapp.model.NewCaViewModel;
+
 public class NewCAFragment_1 extends DialogFragment {
 
     private static final String TAG = "NewCAFragment_1";
@@ -63,9 +65,9 @@ public class NewCAFragment_1 extends DialogFragment {
                 String valString = textValidityView.getText().toString();
 
                 String[] mValidityArray = getResources().getStringArray(R.array.key_validity_array);
-                if( mValidityArray[1] == valString ){
+                if( mValidityArray[1].equals(valString) ){
                     mViewModel.validityPeriodDays = 2 * 365;
-                }else if( mValidityArray[2] == valString ){
+                }else if( mValidityArray[2].equals(valString) ){
                     mViewModel.validityPeriodDays = 4 * 365;
                 }else{
                     mViewModel.validityPeriodDays = 365;
@@ -77,13 +79,13 @@ public class NewCAFragment_1 extends DialogFragment {
                 String quorumString = textQuorumView.getText().toString();
 
                 String[] quorumArray = getResources().getStringArray(R.array.quorum_array);
-                if( quorumArray[1] == quorumString ){
+                if( quorumArray[1].equals(quorumString) ){
                     mViewModel.N = 2;
                     mViewModel.M = 4;
-                }else if( quorumArray[2] == quorumString ){
+                }else if( quorumArray[2].equals(quorumString)){
                     mViewModel.N = 3;
                     mViewModel.M = 4;
-                }else if( quorumArray[3] == quorumString ){
+                }else if( quorumArray[3].equals(quorumString) ){
                     mViewModel.N = 4;
                     mViewModel.M = 4;
                 }else{

@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"     xmlns:tools="http://schemas.android.com/tools"
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/scanCSRFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    tools:context=".NewCAFragment_1">
+    android:tag="scanCSRFragmentTag"
+    tools:context=".ScanCSRFragment">
 
     <TextView
         android:layout_width="match_parent"
@@ -25,7 +28,7 @@
 
         <TextView
             android:layout_height="wrap_content"
-            android:layout_row="2"
+            android:layout_row="0"
             android:layout_column="0"
             android:layout_gravity="end"
             android:text="CSR" />
@@ -34,25 +37,39 @@
             android:id="@+id/txtCsrPEM"
             android:layout_width="match_parent"
             android:layout_height="232dp"
-            android:layout_row="2"
+            android:layout_row="0"
             android:layout_column="1"
             android:ems="10"
             android:gravity="start|top"
             android:inputType="textMultiLine"
             android:singleLine="false"
+            android:text="@string/zxing_msg_default_status"
             android:textAppearance="@style/TextAppearance.AppCompat.Small" />
 
-        <Space
-            android:layout_row="3"
-            android:layout_columnSpan="2"
-            android:layout_gravity="fill" />
+        <TextView
+            android:id="@+id/txtCsrSubjectDescr"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Subject" />
+
+        <TextView
+            android:id="@+id/txtCsrSubject"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:layout_gravity="end"
+            android:text="Subject placeholder" />
+
+
     </GridLayout>
 
 
     <LinearLayout
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal" >
+        android:orientation="horizontal">
 
         <View
             android:layout_width="0dp"

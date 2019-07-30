@@ -42,11 +42,16 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-annotations:2.9.9'
 
     implementation 'com.journeyapps:zxing-android-embedded:3.6.0'
+//    implementation group: 'com.google.zxing', name: 'core', version: '3.3.0'
+//    implementation group: 'com.google.zxing', name: 'android-integration', version: '3.3.0'
+
     implementation 'com.android.support:appcompat-v7:25.3.1'   // Minimum 23+ is required
 
- //   implementation 'com.google.zxing:core:3.3.0'
- //   implementation 'com.google.zxing:android-core:3.3.0'
-    implementation 'me.dm7.barcodescanner:zxing:1.9.3'
+    //   implementation 'com.google.zxing:core:3.3.0'
+    //   implementation 'com.google.zxing:android-core:3.3.0'
+    // implementation 'me.dm7.barcodescanner:zxing:1.9.3'
+
+    implementation 'com.github.bmelnychuk:atv:1.2.+'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'

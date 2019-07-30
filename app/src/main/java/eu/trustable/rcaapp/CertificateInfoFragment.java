@@ -6,22 +6,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.DialogFragment;
-import androidx.lifecycle.ViewModelProviders;
-
-import com.google.android.material.snackbar.Snackbar;
-
-import org.bouncycastle.operator.OperatorCreationException;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -64,12 +55,12 @@ public class CertificateInfoFragment extends DialogFragment {
 
         final View view = inflater.inflate(R.layout.certificate_info_fragment, container, false);
 
-        ((TextView)view.findViewById(R.id.txtCertInfoX500Subject)).setText(rci.subject);
-        Log.d(TAG, "setting X500 subject to " + rci.subject);
+        ((TextView)view.findViewById(R.id.txtCertInfoX500Subject)).setText(rci.getSubject());
+        Log.d(TAG, "setting X500 subject to " + rci.getSubject());
 
         try {
             CertificateFactory  factory = CertificateFactory.getInstance("X.509");
-            X509Certificate cert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(rci.cert));
+            X509Certificate cert = (X509Certificate) factory.generateCertificate(new ByteArrayInputStream(rci.getCert()));
 
             ((TextView)view.findViewById(R.id.txtCertInfoSerial)).setText(cert.getSerialNumber().toString());
 
@@ -95,7 +86,7 @@ public class CertificateInfoFragment extends DialogFragment {
 
                     PersistentModel pm = PersistentModel.getInstance();
                     RootCertificateItem rci = pm.findByCertId(certIdParam);
-                    QRShowFragment qrFrag = QRShowFragment.newInstance(rci.cert, rci.subject);
+                    QRShowFragment qrFrag = QRShowFragment.newInstance(rci.getCert(), rci.getSubject());
                     qrFrag.show(getActivity().getSupportFragmentManager(), "tag");
                 }
             }

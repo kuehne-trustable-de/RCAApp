@@ -1,17 +1,15 @@
 package eu.trustable.rcaapp;
 
-import android.graphics.Bitmap;
 import android.util.Log;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.zxing.WriterException;
 
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 
 import java.io.IOException;
-import java.io.Serializable;
+
 import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.cert.CertificateEncodingException;
@@ -21,34 +19,24 @@ import java.util.Date;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-class RootCertificateItem implements Serializable {
+public class RootCertificateItem extends CertificateItem {
 
     /**
      *
      */
     private static final long serialVersionUID = 571716732845455019L;
 
-    private static final String TAG = "PersistentModel";
-
-    @JsonProperty
-    String certId;
-
-    @JsonProperty
-    byte[] cert;
+    private static final String TAG = "RootCertificateItem";
 
     @JsonProperty
     String privKeyPEM;
 
     @JsonProperty
-    String subject;
-
-    @JsonProperty
-    Date validUntil;
-
-    @JsonProperty
+    private
     int N;
 
     @JsonProperty
+    private
     int M;
 
     @JsonProperty
@@ -60,14 +48,8 @@ class RootCertificateItem implements Serializable {
     public RootCertificateItem(){}
 
     RootCertificateItem(X509Certificate cert, int N, int M){
-        this.certId = cert.getSerialNumber().toString(16);
-        this.subject = cert.getSubjectDN().getName().toString();
-        this.validUntil = cert.getNotAfter();
-        try {
-            this.cert = cert.getEncoded();
-        } catch (CertificateEncodingException e) {
-            Log.e( TAG, "Certificate encoding failed", e);
-        }
+        super(cert);
+
         this.N = N;
         this.M = M;
     }
@@ -94,8 +76,14 @@ class RootCertificateItem implements Serializable {
 
     public void addIssuedCertList(X509Certificate cert){
 
-        issuedCertList.add(new IssuedCertificateItem(cert));
+        getIssuedCertList().add(new IssuedCertificateItem(cert));
     }
 
+    public int getN() {
+        return N;
+    }
 
+    public int getM() {
+        return M;
+    }
 }

@@ -12,6 +12,19 @@
         android:text="Add Root CA 2/2"
         android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
+    <RelativeLayout
+        android:id="@+id/certCreationPanel"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        tools:visibility="gone">
+
+        <ProgressBar
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:indeterminate="true" />
+    </RelativeLayout>
+
     <GridLayout
 
         android:layout_width="match_parent"
