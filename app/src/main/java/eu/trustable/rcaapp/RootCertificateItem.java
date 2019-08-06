@@ -11,12 +11,19 @@ import org.bouncycastle.util.io.pem.PemWriter;
 import java.io.IOException;
 
 import java.io.StringWriter;
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+
+import javax.xml.bind.annotation.XmlTransient;
+
+import de.trustable.ca3s.quorumProcessor.QuorumProcessor;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class RootCertificateItem extends CertificateItem {
@@ -29,15 +36,16 @@ public class RootCertificateItem extends CertificateItem {
     private static final String TAG = "RootCertificateItem";
 
     @JsonProperty
-    String privKeyPEM;
+    private String privKeyPEM;
 
     @JsonProperty
-    private
-    int N;
+    private QuorumProcessor qp;
 
     @JsonProperty
-    private
-    int M;
+    private int N;
+
+    @JsonProperty
+    private int M;
 
     @JsonProperty
     private List<IssuedCertificateItem> issuedCertList = new ArrayList<IssuedCertificateItem>();
@@ -54,7 +62,8 @@ public class RootCertificateItem extends CertificateItem {
         this.M = M;
     }
 
-    public RootCertificateItem(KeyPair kp, X509Certificate cert, int N, int M) throws IOException {
+    public RootCertificateItem(KeyPair kp, X509Certificate cert, int N, int M, Map<Integer, char[]> passwordMap) throws IOException, GeneralSecurityException {
+
         this(cert, N, M);
 
         try {
@@ -62,7 +71,11 @@ public class RootCertificateItem extends CertificateItem {
             try (PemWriter writer = new PemWriter(swPem)) {
                 writer.writeObject(new PemObject("PRIVATE KEY", kp.getPrivate().getEncoded()));
             }
-            this.privKeyPEM = swPem.toString();
+            String keyAsPEM = swPem.toString();
+            this.privKeyPEM = keyAsPEM;
+
+            this.qp = new QuorumProcessor(N, keyAsPEM.getBytes(), passwordMap);
+
             Log.d( TAG, "Writing #" +kp.getPrivate().getEncoded().length + " private key bytes as PEM: \n" + this.privKeyPEM);
         } catch (IOException e) {
             Log.e(TAG, "problem encoding private key", e);
@@ -86,4 +99,13 @@ public class RootCertificateItem extends CertificateItem {
     public int getM() {
         return M;
     }
+
+    PrivateKey getPrivateKey(Map<Integer, char[]> passwordMap) throws GeneralSecurityException {
+
+        CryptoUtil cu = new CryptoUtil();
+
+        byte[] pemKeyBytes = this.qp.getKey(passwordMap);
+        return cu.convertPemToPrivateKey(new String(pemKeyBytes));
+    }
+
 }

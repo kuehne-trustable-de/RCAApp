@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 
 import eu.trustable.rcaapp.model.NewCsrViewModel;
 
@@ -60,6 +61,8 @@ public class ScanCSRFragment extends DialogFragment {
 
         final View view = inflater.inflate(R.layout.scan_csr_fragment, container, false);
         final NewCsrViewModel mViewModel = ViewModelProviders.of(getActivity()).get(NewCsrViewModel.class);
+
+        mViewModel.passwordMap = new HashMap<Integer, char[]>();
 
         startScan();
 
@@ -107,37 +110,16 @@ public class ScanCSRFragment extends DialogFragment {
                 } else {
 
                     mViewModel.csrPEM = csrPEM;
-
-                    CryptoUtil cu = new CryptoUtil();
+                    mViewModel.issuingCertId = certIdParam;
 
                     PersistentModel pm = PersistentModel.getInstance();
-                    RootCertificateItem rci = pm.findByCertId(certIdParam);
-
-                    try {
-                        X509Certificate issuingCertificate = cu.getCertificateFromBytes(rci.getCert());
-                        PrivateKey privKey = cu.convertPemToPrivateKey(rci.privKeyPEM);
-                        X509Certificate cert = cu.signCertificateRequest(issuingCertificate, privKey, mViewModel.csrPEM);
-
-                        rci.addIssuedCertList(cert);
-
-                        pm.persist();
-
-                        String subject = cert.getSubjectDN().getName();
-                        Log.d(TAG, "Certificate signed successfully: " + subject);
-
-                        dismiss();
-
-                        QRShowFragment qrFrag = QRShowFragment.newInstance(cert.getEncoded(), subject);
-                        qrFrag.show(getActivity().getSupportFragmentManager(), "scanCSRFragmentTag");
-
-                    } catch (IOException | OperatorCreationException | GeneralSecurityException e) {
-                        Snackbar.make(v, "Problem singning CSR: " + e.getLocalizedMessage(), Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
-                    }
+                    mViewModel.issuingCert = pm.findByCertId(certIdParam);
 
 
-//                    NewCAFragment_2 newCADialog_2 = new NewCAFragment_2();
-//                    newCADialog_2.show(getActivity().getSupportFragmentManager(), "tag");
+                    dismiss();
+
+                    ReviewCSRFragment reviewDialog = new ReviewCSRFragment();
+                    reviewDialog.show(getActivity().getSupportFragmentManager(), "tag");
                 }
             }
         });

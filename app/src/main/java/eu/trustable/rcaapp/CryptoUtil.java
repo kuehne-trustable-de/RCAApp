@@ -1,18 +1,31 @@
 package eu.trustable.rcaapp;
 
-import android.graphics.Bitmap;
+import android.util.Base64;
 import android.util.Log;
 
-import com.google.zxing.WriterException;
-
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -25,9 +38,12 @@ import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.bouncycastle.pkcs.PKCSException;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 
@@ -38,9 +54,12 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -53,10 +72,15 @@ import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
+
+import eu.trustable.rcaapp.crypto.OidNameMapper;
 
 public class CryptoUtil {
 
@@ -142,9 +166,15 @@ public class CryptoUtil {
         return (X509Certificate) fact.generateCertificate(bIn);
     }
 
-    public X509Certificate signCertificateRequest( X509Certificate issuerCert, PrivateKey privKey, String csrPem) throws IOException, NoSuchAlgorithmException, OperatorCreationException, CertificateException {
+    public X509Certificate signCertificateRequest( RootCertificateItem rci, Map<Integer, char[]> passwordMap, String csrPem) throws IOException, GeneralSecurityException, OperatorCreationException, PKCSException {
+
+        X509Certificate issuerCert = getCertificateFromBytes(rci.getCert());
 
         PKCS10CertificationRequest p10CSR = convertPemToPKCS10CertificationRequest(csrPem);
+
+        if( !isValidSelfsignedCSR(p10CSR) ){
+            throw new IOException("Request not self-signed with the new key!");
+        }
 
         JcaX500NameUtil nameUtil = new JcaX500NameUtil();
         X500Name issuer = nameUtil.getSubject(issuerCert);
@@ -175,6 +205,8 @@ public class CryptoUtil {
         certBuilder.addExtension(Extension.authorityKeyIdentifier, false, new JcaX509ExtensionUtils().createAuthorityKeyIdentifier(issuerCert.getPublicKey()) );
 
 
+        // retrieve the private key
+        PrivateKey privKey = rci.getPrivateKey(passwordMap);
         ContentSigner sigGen = new JcaContentSignerBuilder(issuerCert.getSigAlgName()).build(privKey);
 
         byte[] certBytes = certBuilder.build(sigGen).getEncoded();
@@ -185,6 +217,256 @@ public class CryptoUtil {
         Log.d(TAG, "certificate created for CSR for subject '" + issuedCertificate.getSubjectDN().getName() + "'");
 
         return issuedCertificate;
+    }
+
+    public Map<String, String> explainCertificateRequestAttributes(String csrPem) throws IOException, NoSuchAlgorithmException, OperatorCreationException, CertificateException, InvalidKeySpecException, NoSuchProviderException, PKCSException {
+
+        Map<String, String> attrMap = new HashMap<>();
+
+        PKCS10CertificationRequest p10CSR = convertPemToPKCS10CertificationRequest(csrPem);
+
+        Log.d(TAG, "CSR has #" + p10CSR.getAttributes().length + " attributes");
+
+        for( Attribute attr: p10CSR.getAttributes()){
+
+            String attrOid = attr.getAttrType().getId();
+            String attrReadableName = OidNameMapper.lookupOid(attrOid);
+
+            if( PKCSObjectIdentifiers.pkcs_9_at_extensionRequest.equals(attr.getAttrType()) ) {
+                Log.d(TAG, "CSR contains extensionRequest");
+                explainExtensionRequests(attrMap, attr);
+
+            } else if( "certReqExtensions".equals(attrReadableName)){
+                Log.d(TAG, "CSR contains attrReadableName");
+                explainExtensionRequests(attrMap, attr );
+            }else {
+                String value = getASN1ValueAsString(attr);
+                attrMap.put(attrReadableName, value);
+            }
+        }
+
+        return attrMap;
+    }
+
+    private String getASN1ValueAsString(Attribute attr) {
+        return  getASN1ValueAsString(attr.getAttrValues().toArray());
+    }
+
+    private String getASN1ValueAsString(ASN1Encodable[] asn1EncArr ) {
+        String value = "";
+        for (ASN1Encodable asn1Enc : asn1EncArr) {
+            if (value.length() > 0) {
+                value += ", ";
+            }
+            value += asn1Enc.toString();
+        }
+        return value;
+    }
+
+    void explainExtensionRequests(Map<String, String> attrMap, Attribute attrExtension ){
+        ASN1Set valueSet = attrExtension.getAttrValues();
+        Log.d(TAG, "ExtensionRequest / AttrValues has " + valueSet.size() + " elements" );
+        for (ASN1Encodable asn1Enc : valueSet) {
+            DERSequence derSeq = (DERSequence)asn1Enc;
+
+            Log.d(TAG, "ExtensionRequest / DERSequence has "+derSeq.size()+" elements" );
+
+            for( ASN1Encodable asn1Enc2 : derSeq.toArray()) {
+
+                Log.d(TAG, "ExtensionRequest / asn1Enc2 is a " + asn1Enc2.getClass().getName());
+
+                DERSequence derSeq2 = (DERSequence) asn1Enc2;
+                int seq2Size = derSeq2.size();
+                Log.d(TAG, "ExtensionRequest / DERSequence2 has " + derSeq2.size() + " elements");
+                Log.d(TAG, "ExtensionRequest / DERSequence2[0] is a " + derSeq2.getObjectAt(0).getClass().getName());
+
+                ASN1Encodable asn1EncValue = derSeq2.getObjectAt(1);
+                Log.d(TAG, "ExtensionRequest / DERSequence2[1] (asn1EncValue)is a " + asn1EncValue.getClass().getName());
+
+
+                ASN1ObjectIdentifier objId = (ASN1ObjectIdentifier) (derSeq2.getObjectAt(0));
+                String attrReadableName = OidNameMapper.lookupOid(objId.getId());
+
+
+                if (Extension.subjectAlternativeName.equals(objId)) {
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(1);
+                    byte[] valBytes = derStr.getOctets();
+
+                    GeneralNames names = GeneralNames.getInstance(valBytes);
+                    Log.d(TAG, "Attribute value SAN" + names);
+                    Log.d(TAG, "SAN values #" + names.getNames().length);
+
+                    for (GeneralName gnSAN : names.getNames()) {
+                        Log.d(TAG, "GN " + gnSAN.toString());
+                        attrMap.put(attrReadableName, gnSAN.toString());
+
+                    }
+                } else if(Extension.basicConstraints.equals(objId)){
+
+                    Log.d(TAG, "second element is of type " + derSeq2.getObjectAt(1).getClass().getName());
+
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(seq2Size-1);
+                    byte[] valBytes = derStr.getOctets();
+
+                    BasicConstraints bc = BasicConstraints.getInstance(valBytes);
+
+                    String bcString = "";
+
+                    if( bc.isCA()){
+                        bcString = "CA ";
+                    }
+                    BigInteger pathLen = bc.getPathLenConstraint();
+                    if( pathLen != null){
+                        bcString = "path len " + pathLen;
+                    }
+                    Log.i(TAG, "Basic constraints has value '" + bcString + "'");
+                    attrMap.put(attrReadableName, bcString);
+
+                } else if(Extension.keyUsage.equals(objId)){
+
+                    Log.d(TAG, "second element is of type " + derSeq2.getObjectAt(1).getClass().getName());
+
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(seq2Size-1);
+                    byte[] valBytes = derStr.getOctets();
+
+                    KeyUsage ku = KeyUsage.getInstance(valBytes);
+
+                    byte[] kuBytes = ku.getBytes();
+
+                    int usageInt = kuBytes[0];
+                    if( kuBytes.length > 1){
+                        usageInt += kuBytes[1]>>8;
+                    }
+                    String usageString = usageAsString(usageInt);
+                    Log.i(TAG, "key usage has value '" + usageString + " / " + ku.toString() + "'");
+                    attrMap.put(attrReadableName, usageString);
+
+                } else if(Extension.extendedKeyUsage.equals(objId)){
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(1);
+                    byte[] valBytes = derStr.getOctets();
+
+                    ExtendedKeyUsage eku = ExtendedKeyUsage.getInstance(valBytes);
+
+                    String exUsageString = "";
+                    for(KeyPurposeId kpi: eku.getUsages()){
+                        exUsageString += OidNameMapper.lookupOid(kpi.getId()) + " ";
+                    }
+                    Log.i(TAG, "extended key usage has value '" + exUsageString + "' / '" + eku.toString() + "'");
+                    attrMap.put(attrReadableName, exUsageString);
+
+                } else if(Extension.subjectKeyIdentifier.equals(objId)){
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(1);
+                    byte[] valBytes = derStr.getOctets();
+
+                    SubjectKeyIdentifier ski = SubjectKeyIdentifier.getInstance(valBytes);
+//                    String skiValue = Base64.encodeToString(ski.getKeyIdentifier(), Base64.NO_PADDING | Base64.NO_WRAP);
+                    String skiValue = bytesToHex(ski.getKeyIdentifier());
+                    Log.i(TAG, "ski has value '" + skiValue + "'");
+                    attrMap.put(attrReadableName, skiValue);
+
+                } else if("enrollCerttypeExtension".equals(attrReadableName)){
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(1);
+                    byte[] valBytes = derStr.getOctets();
+                    DERBMPString bmpString = DERBMPString.getInstance(valBytes);
+
+                    Log.i(TAG, "enrollCerttypeExtension is '" + bmpString.getString() + "'");
+                    attrMap.put(attrReadableName, bmpString.getString());
+
+                } else if("cAKeyCertIndexPair".equals(attrReadableName)){
+                    DEROctetString derStr = (DEROctetString) derSeq2.getObjectAt(1);
+                    byte[] valBytes = derStr.getOctets();
+                    ASN1Integer asn1Int = ASN1Integer.getInstance(valBytes);
+
+                    Log.i(TAG, "cAKeyCertIndexPair is '" + asn1Int.getValue() + "'");
+                    attrMap.put(attrReadableName, asn1Int.getValue().toString());
+
+
+                } else {
+                    String stringValue = asn1EncValue.toString();
+
+//                    Log.d(TAG, "asn1EncValue.toASN1Primitive " + asn1EncValue.toASN1Primitive().getClass().getName());
+                    Method[] methods = asn1EncValue.getClass().getMethods();
+
+                    for( Method m: methods){
+//                        Log.d(TAG, "checking method " + m.getName());
+                        try {
+
+                            if( "getString".equals(m.getName())){
+                                stringValue = (String)m.invoke(asn1EncValue);
+                                break;
+                            }else if( "getOctets".equals(m.getName())){
+                                stringValue = new String((byte[])m.invoke(asn1EncValue));
+                                break;
+                            }else if( "getValue".equals(m.getName())){
+                                stringValue = (String)m.invoke(asn1EncValue);
+                                break;
+                            }else if( "getId".equals(m.getName())){
+                                stringValue = OidNameMapper.lookupOid((String)m.invoke(asn1EncValue));
+                                break;
+                            }else if( "getAdjustedDate".equals(m.getName())){
+                                stringValue = (String)m.invoke(asn1EncValue);
+                                break;
+                            }
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            Log.d(TAG, "invoking " + m.getName(), e);
+                        }
+                    }
+
+/*
+                    try {
+                        Method getStringMethod = asn1Pri.getClass().getMethod("getString", null);
+                        stringValue = (String)getStringMethod.invoke(asn1Pri);
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                        Log.d(TAG, "getString", e);
+                        try{
+                            Method getValueMethod = asn1Pri.getClass().getMethod("getValue");
+                            stringValue = (String)getValueMethod.invoke(asn1Pri);
+                        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e2) {
+                            Log.d(TAG, "getValue", e2);
+                            try{
+                                Method getIdMethod = asn1Pri.getClass().getMethod("getId");
+                                stringValue = OidNameMapper.lookupOid((String)getIdMethod.invoke(asn1Pri));
+                            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e3) {
+                                Log.d(TAG, "getId", e3);
+                                try{
+                                    Method getAdjustedDateMethod = asn1Pri.getClass().getMethod("getAdjustedDate");
+                                    stringValue = (String)getAdjustedDateMethod.invoke(asn1Pri);
+                                } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e4) {
+                                    Log.d(TAG, "getAdjustedDate", e4);
+                                    stringValue = asn1Pri.toString();
+                                }
+                            }
+                        }
+                    }
+*/
+ //                   Log.i(TAG, "Extensions Attribute '" + attrReadableName + "' has value '" + stringValue + "' of type " + derSeq2.getObjectAt(1).getClass().getName());
+                    attrMap.put(attrReadableName, stringValue);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * convert the usage-bits to a readable string
+     * @param usage
+     * @return descriptive text representing the key usage
+     */
+    public static String usageAsString( int usage ){
+
+
+        String desc = "";
+        if ( (usage & KeyUsage.digitalSignature) > 0) desc += "digitalSignature ";
+        if ( (usage & KeyUsage.nonRepudiation) > 0) desc += "nonRepudiation ";
+        if ( (usage & KeyUsage.keyEncipherment) > 0) desc += "keyEncipherment ";
+        if ( (usage & KeyUsage.dataEncipherment) > 0) desc += "dataEncipherment ";
+        if ( (usage & KeyUsage.keyAgreement) > 0) desc += "keyAgreement ";
+        if ( (usage & KeyUsage.keyCertSign) > 0) desc += "keyCertSign ";
+        if ( (usage & KeyUsage.cRLSign) > 0) desc += "cRLSign ";
+        if ( (usage & KeyUsage.encipherOnly) > 0) desc += "encipherOnly ";
+        if ( (usage & KeyUsage.decipherOnly) > 0) desc += "decipherOnly ";
+
+        return (desc);
     }
 
 /*
@@ -231,12 +513,24 @@ public class CryptoUtil {
         try {
             Object parsedObj = pemParser.readObject();
 
-            Log.d(TAG, "PemParser returned: " + parsedObj);
-
             if (parsedObj == null) {
                 throw new IOException("No PEM content found");
-            } else if (parsedObj instanceof PKCS10CertificationRequest) {
+            }
+
+//            Log.d(TAG, "PemParser returned: " + parsedObj);
+
+            if (parsedObj instanceof PKCS10CertificationRequest) {
+
                 csr = (PKCS10CertificationRequest) parsedObj;
+
+                try {
+                    if( !isValidSelfsignedCSR(csr) ){
+                        throw new IOException("Request not self-signed with the new key!");
+                    }
+                } catch (GeneralSecurityException | OperatorCreationException | PKCSException e) {
+                    Log.i(TAG, "problem processing CSR", e);
+                    throw new IOException("Problem interpreting the PKCS10 Request content: " + e.getLocalizedMessage());
+                }
             } else {
                 throw new IOException("Unexpected content of type " + parsedObj.getClass().getName());
             }
@@ -247,6 +541,19 @@ public class CryptoUtil {
         }
     }
 
+    public boolean isValidSelfsignedCSR(PKCS10CertificationRequest p10CertReq) throws IOException, NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException, OperatorCreationException, PKCSException {
+
+        SubjectPublicKeyInfo subjectPKInfo = p10CertReq.getSubjectPublicKeyInfo();
+        X509EncodedKeySpec xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
+
+        String algoId = subjectPKInfo.getAlgorithm().getAlgorithm().getId();
+        Log.d(TAG, "subjectPKInfo algorithm: " + algoId);
+
+        PublicKey pubKey = KeyFactory.getInstance(algoId, "BC").generatePublic(xspec);
+        ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().setProvider(BC).build(pubKey);
+
+        return p10CertReq.isSignatureValid(verifier);
+    }
 
     public X509Certificate getCertificateFromBytes(byte[] certBytes) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
@@ -328,4 +635,14 @@ public class CryptoUtil {
         return "";
     }
 
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
 }

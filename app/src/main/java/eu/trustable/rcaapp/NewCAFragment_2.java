@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -22,8 +23,10 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
 
+import de.trustable.ca3s.quorumProcessor.QuorumProcessor;
 import eu.trustable.rcaapp.model.NewCaViewModel;
 
 public class NewCAFragment_2 extends DialogFragment {
@@ -87,38 +90,6 @@ public class NewCAFragment_2 extends DialogFragment {
                 mViewModel.passwordMap = passwordMap;
 
                 new CreateCertificateTask().execute(mViewModel);
-/*
-                CryptoUtil cu = new CryptoUtil();
-
-                try {
-                    KeyPair kp = cu.createKeyPair(mViewModel.keyTypeLength);
-                    Log.d(TAG, "key pair created successfully");
-
-                    X509Certificate cert = cu.buildSelfSignedCertificate(kp, mViewModel.x500Subject, mViewModel.validityPeriodDays, mViewModel.keyTypeLength);
-                    Log.d(TAG, "certificate created successfully");
-
-                    PersistentModel pm = PersistentModel.getInstance();
-                    String certId = pm.addKeyAndCertificate(kp, cert, 2, 4);
-
-                    pm.persist();
-
-                    String subject = cert.getSubjectDN().getName();
-                    Log.d(TAG, "Root Certificate created successfully: " + subject);
-
-                    view.findViewById(R.id.certCreationPanel).setVisibility(View.GONE);
-
-                    dismiss();
-
-                    QRShowFragment qrFrag = QRShowFragment.newInstance(cert.getEncoded(), subject);
-
-                    qrFrag.show(getActivity().getSupportFragmentManager(), "tag");
-
-                } catch (GeneralSecurityException | OperatorCreationException | IOException e){
-                    Log.e(TAG, "creation of selfsigned certificate failed", e);
-                    Snackbar.make(v, "Problem creating / storing root  certificate: " + e.getLocalizedMessage(), Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-                }
-                */
             }
         });
 
@@ -163,9 +134,16 @@ public class NewCAFragment_2 extends DialogFragment {
                 Log.d(TAG, "certificate created successfully");
 
                 PersistentModel pm = PersistentModel.getInstance();
-                String certId = pm.addKeyAndCertificate(kp, cert, 2, 4);
+                String certId = pm.addKeyAndCertificate(kp, cert, 2, 4, mViewModel.passwordMap);
 
                 pm.persist();
+
+                // delete the precious passwords
+                for( Integer key:mViewModel.passwordMap.keySet()){
+                    char[] pwClear = mViewModel.passwordMap.get(key);
+                    Arrays.fill(pwClear, (char)0);
+                }
+                mViewModel.passwordMap.clear();
 
                 String subject = cert.getSubjectDN().getName();
                 Log.d(TAG, "Root Certificate created successfully: " + subject);
@@ -199,6 +177,20 @@ public class NewCAFragment_2 extends DialogFragment {
         protected void onPostExecute(String[] strings) {
 
             Log.d(TAG, "in onPostExecute for certId " + strings[0]);
+
+            // refresh the cert tree view
+            MainActivity mainActivity = (MainActivity) getActivity();
+            if(mainActivity!=null){
+                try{
+                    mainActivity.refreshTreeViewData();
+                }catch(IOException ioe) {
+                    Log.e(TAG, "problem reading persistent content ", ioe);
+                    Toast.makeText(mainActivity, "Problem reading persistent aftre creation of CA ...", Toast.LENGTH_LONG).show();
+                }
+            }
+
+            final RelativeLayout containerView = (RelativeLayout)getActivity().findViewById(R.id.container);
+            containerView.invalidate();
 
             dismiss();
 

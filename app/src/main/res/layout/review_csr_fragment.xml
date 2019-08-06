@@ -2,28 +2,60 @@
 
 <GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/layoutReviewCommitterFragment"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:tag="scanCSRFragmentTag"
-    tools:context=".ScanCSRFragment">
+    android:tag="reviewCSRFragmentTag"
+    tools:context=".ReviewCSRFragment">
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Scan CSR"
+        android:text="Review CSR"
         android:textAppearance="@style/TextAppearance.AppCompat.Large" />
 
     <GridLayout
 
+        android:id="@+id/layoutReviewCSRFragment"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
 
+        android:layout_height="wrap_content"
         android:alignmentMode="alignBounds"
         android:columnCount="2"
-        android:columnOrderPreserved="false"
 
+        android:columnOrderPreserved="false"
+        android:useDefaultMargins="true">
+
+        <TextView
+            android:id="@+id/txtCsrSubjectDescr"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:text="Subject" />
+
+        <TextView
+            android:id="@+id/txtCsrSubject"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_gravity="left"
+            android:text="Subject placeholder" />
+
+
+
+    </GridLayout>
+
+    <GridLayout
+
+        android:id="@+id/layoutReviewCommitterFragment"
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+        android:alignmentMode="alignBounds"
+        android:columnCount="2"
+
+        android:columnOrderPreserved="false"
         android:useDefaultMargins="true">
 
         <TextView
@@ -31,40 +63,43 @@
             android:layout_row="0"
             android:layout_column="0"
             android:layout_gravity="end"
-            android:text="CSR" />
+            android:text="Committer" />
 
-        <EditText
-            android:id="@+id/txtCsrPEM"
+        <Spinner
+            android:id="@+id/spinnerCommitterName"
             android:layout_width="match_parent"
-            android:layout_height="232dp"
+            android:layout_height="wrap_content"
             android:layout_row="0"
             android:layout_column="1"
-            android:ems="10"
-            android:gravity="start|top"
-            android:inputType="textMultiLine"
-            android:singleLine="false"
-            android:text="@string/zxing_msg_default_status"
-            android:textAppearance="@style/TextAppearance.AppCompat.Small" />
+            android:entries="@array/committer_array" />
 
         <TextView
-            android:id="@+id/txtCsrSubjectDescr"
             android:layout_height="wrap_content"
             android:layout_row="1"
             android:layout_column="0"
             android:layout_gravity="end"
-            android:text="Subject" />
+            android:text="Password" />
 
-        <TextView
-            android:id="@+id/txtCsrSubject"
+        <EditText
+            android:id="@+id/txtReview_QPW1"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_row="1"
             android:layout_column="1"
-            android:layout_gravity="end"
-            android:text="Subject placeholder" />
-
+            android:ems="10"
+            android:gravity="start"
+            android:inputType="textPassword"
+            android:text="Quorum member" />
 
     </GridLayout>
 
+    <TextView
+        android:id="@+id/txtReview_CommiterHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:text="2 additional committer required"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
 
     <LinearLayout
         android:layout_width="fill_parent"

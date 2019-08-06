@@ -22,6 +22,13 @@
         <item>4 of 4</item>
     </string-array>
 
+    <string-array name="committer_array">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>4</item>
+    </string-array>
+
     <string name="qrCodeCert">QR code of the selected certificate</string>
 
     <string name="showQR">Show QRCode</string>
