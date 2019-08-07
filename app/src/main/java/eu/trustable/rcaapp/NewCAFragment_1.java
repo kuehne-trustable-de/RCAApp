@@ -54,7 +54,7 @@ public class NewCAFragment_1 extends DialogFragment {
             @Override
             public void onClick(View v) {
 
-                String subject = ((EditText)view.findViewById(R.id.txtCsrPEM)).getText().toString();
+                String subject = ((EditText)view.findViewById(R.id.txtNewCASubject)).getText().toString();
 
                 Spinner keyAlgoSpinner = ((Spinner)view.findViewById(R.id.spinnerKeyAlgo));
                 TextView textKeyTypeView = (TextView)keyAlgoSpinner.getSelectedView();

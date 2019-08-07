@@ -174,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
         final RelativeLayout containerView = (RelativeLayout) findViewById(R.id.container);
 
         AndroidTreeView tView = new AndroidTreeView(this, root);
+        containerView.removeAllViewsInLayout();
         containerView.addView(tView.getView());
     }
 }

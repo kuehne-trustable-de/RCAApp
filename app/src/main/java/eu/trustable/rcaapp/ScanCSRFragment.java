@@ -66,7 +66,7 @@ public class ScanCSRFragment extends DialogFragment {
 
         startScan();
 
-        EditText csrPEMText = (EditText)view.findViewById(R.id.txtCsrPEM);
+        EditText csrPEMText = (EditText)view.findViewById(R.id.txtCSRAsPEM);
         csrPEMText.addTextChangedListener(new TextWatcher() {
 
             public void afterTextChanged(Editable s) {
@@ -101,7 +101,7 @@ public class ScanCSRFragment extends DialogFragment {
             @Override
             public void onClick(View v) {
 
-                String csrPEM = ((EditText)view.findViewById(R.id.txtCsrPEM)).getText().toString();
+                String csrPEM = ((EditText)view.findViewById(R.id.txtCSRAsPEM)).getText().toString();
 
 
                 if( csrPEM.trim().length() == 0) {
@@ -155,7 +155,7 @@ public class ScanCSRFragment extends DialogFragment {
             } else {
                 Toast.makeText(getContext(), "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
 
-                EditText csrPEMText = (EditText)this.getView().findViewById(R.id.txtCsrPEM);
+                EditText csrPEMText = (EditText)this.getView().findViewById(R.id.txtCSRAsPEM);
                 csrPEMText.setText( result.getContents());
 //                csrPEMText.setText( new String(result.getRawBytes()));
             }
