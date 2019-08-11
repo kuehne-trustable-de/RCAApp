@@ -29,12 +29,24 @@
         <item>4</item>
     </string-array>
 
+    <string-array name="revocation_reason_array">
+        <item>keyCompromise</item>
+        <item>cACompromise</item>
+        <item>affiliationChanged</item>
+        <item>superseded</item>
+        <item>cessationOfOperation</item>
+        <item>privilegeWithdrawn</item>
+        <item>aACompromise</item>
+        <item>unspecified</item>
+    </string-array>
+
+
     <string name="qrCodeCert">QR code of the selected certificate</string>
 
     <string name="showQR">Show QRCode</string>
     <string name="issueCRL">Issue CRL</string>
     <string name="scanCSR">Scan CSR</string>
-
+    <string name="revokeCert">Revoke</string>
 
     <string name="submit">Submit</string>
     <string name="next">Next</string>

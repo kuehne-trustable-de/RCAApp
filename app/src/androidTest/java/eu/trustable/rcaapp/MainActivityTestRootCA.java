@@ -71,7 +71,8 @@ public class MainActivityTestRootCA {
         appCompatButton.perform(click());
 
         ViewInteraction appCompatEditText6 = onView(
-                allOf(withId(R.id.txtNewCA_QPW1), withText("Quorum member 1"),
+                allOf(withId(R.id.txtNewCA_QPW1),
+//                        withText("Quorum member 1"),
                         isDisplayed()));
         appCompatEditText6.perform(replaceText("Quorum member !"), closeSoftKeyboard());
 

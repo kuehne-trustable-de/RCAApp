@@ -2,7 +2,6 @@ package eu.trustable.rcaapp;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,22 +20,40 @@ import androidx.lifecycle.ViewModelProviders;
 import com.google.android.material.snackbar.Snackbar;
 
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.pkcs.PKCS10CertificationRequest;
-import org.bouncycastle.pkcs.PKCSException;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
+import java.security.cert.X509CRL;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.HashMap;
 
-import eu.trustable.rcaapp.model.NewCsrViewModel;
+import eu.trustable.rcaapp.model.NewCrlViewModel;
 
-public class ReviewCSRFragment extends DialogFragment {
+public class ReviewCRLFragment extends DialogFragment {
 
-    private static final String TAG = "ReviewCSRFragment";
+    private static final String TAG = "ReviewCRLFragment";
 
-    private NewCsrViewModel mViewModel;
+    private NewCrlViewModel mViewModel;
+    private String certIdParam;
+    private boolean initPasswordMap = true;
+
+    public static ReviewCRLFragment newInstance(String certId) {
+        ReviewCRLFragment fragment = new ReviewCRLFragment();
+
+        fragment.certIdParam = certId;
+
+        return fragment;
+    }
+
+    public static ReviewCRLFragment followUpInstance(String certId) {
+        ReviewCRLFragment fragment = new ReviewCRLFragment();
+
+        fragment.certIdParam = certId;
+        fragment.initPasswordMap = false;
+
+        return fragment;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,22 +65,48 @@ public class ReviewCSRFragment extends DialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        final View view = inflater.inflate(R.layout.review_csr_fragment, container, false);
-        final NewCsrViewModel mViewModel = ViewModelProviders.of(getActivity()).get(NewCsrViewModel.class);
+        final View view = inflater.inflate(R.layout.review_crl_fragment, container, false);
+        final NewCrlViewModel mViewModel = ViewModelProviders.of(getActivity()).get(NewCrlViewModel.class);
+        mViewModel.issuingCertId = certIdParam;
+        if( initPasswordMap ) {
+            mViewModel.passwordMap = new HashMap<Integer, char[]>();
+        }
 
-        GridLayout gridCSRAttributes = (GridLayout)view.findViewById(R.id.layoutReviewCSRFragment);
+        GridLayout gridCSRAttributes = (GridLayout)view.findViewById(R.id.layoutReviewCRLFragment);
 
         CryptoUtil cu = new CryptoUtil();
 
         try {
-            PKCS10CertificationRequest p10Req = cu.convertPemToPKCS10CertificationRequest(mViewModel.csrPEM);
-            TextView csrSubjectText = (TextView)view.findViewById(R.id.txtCsrSubject);
-            String subject = p10Req.getSubject().toString();
-            if( subject.length() > 50){
-                subject= subject.substring(0, 50) + " ...";
-            }
-            csrSubjectText.setText(subject);
+            TextView crlIssuerText = (TextView) view.findViewById(R.id.txtCrlIssuer);
 
+            PersistentModel pm = PersistentModel.getInstance();
+            mViewModel.issuingCert = pm.findRootByCertId(certIdParam);
+
+            Log.d(TAG, "issuing CRL for CertId '" + certIdParam + "'");
+
+            String issuer = mViewModel.issuingCert.getSubject().toString();
+            Log.d(TAG, "issuing CRL for Cert '" + issuer + "'");
+
+            if (issuer.length() > 50) {
+                issuer = issuer.substring(0, 50) + " ...";
+            }
+            crlIssuerText.setText(issuer);
+
+            int revokedCerts = 0;
+            int pendingCerts = 0;
+            mViewModel.revokedCertificateList = new ArrayList<IssuedCertificateItem>();
+            for( IssuedCertificateItem ici: mViewModel.issuingCert.getIssuedCertList()){
+                if( ici.getRevocationReason() != IssuedCertificateItem.CRL_REASON_NOT_REVOKED){
+                    mViewModel.revokedCertificateList.add(ici);
+                    revokedCerts++;
+                    if( ici.isRevocationPending()){
+                        pendingCerts++;
+                    }
+                }
+            }
+
+            Log.d(TAG, "issuing CRL for Cert '" + issuer + "' with " + revokedCerts + " revoked certs, "+ pendingCerts + " pending revocation.");
+/*
             Map<String, String> reqAttributes = cu.explainCertificateRequestAttributes(mViewModel.csrPEM);
             Log.d(TAG, "reqAttributes has #" + reqAttributes.size() + " elements");
 
@@ -113,27 +156,26 @@ public class ReviewCSRFragment extends DialogFragment {
 
                 row++;
             }
+*/
 
-
-            Spinner committerSpinner = ((Spinner)view.findViewById(R.id.spinnerCommitterName));
+            Spinner committerSpinner = ((Spinner) view.findViewById(R.id.spinnerCommitterName));
 
             selectSpinnerItemByValue(committerSpinner, "2");
-            /*
-            TextView textCommitterView = (TextView)committerSpinner.getSelectedView();
-            String quorumString = textCommitterView.getText().toString();
-*/
 
             int nRequired = mViewModel.issuingCert.getN();
             int stillNeeded = nRequired - mViewModel.passwordMap.size();
 
-            TextView committerHintText = (TextView)view.findViewById(R.id.txtReview_CommiterHint);
+            Log.d(TAG, "nRequired : "+nRequired+", stillNeeded : " + stillNeeded);
+
+            TextView committerHintText = (TextView) view.findViewById(R.id.txtReview_CommiterHint);
             String hintText = stillNeeded + " additional committers required";
-            if( stillNeeded == 1){
+            if (stillNeeded == 1) {
                 hintText = "final committer";
             }
             committerHintText.setText(hintText);
 
-        } catch (IOException |OperatorCreationException | GeneralSecurityException |PKCSException e) {
+//        } catch (IOException |OperatorCreationException | GeneralSecurityException |PKCSException e) {
+        } catch(Exception e ){
             e.printStackTrace();
         }
 
@@ -161,8 +203,8 @@ public class ReviewCSRFragment extends DialogFragment {
 
                     dismiss();
 
-                    ReviewCSRFragment reviewDialog = new ReviewCSRFragment();
-                    reviewDialog.show(getActivity().getSupportFragmentManager(), "tag");
+                    ReviewCRLFragment crlReviewFrag = ReviewCRLFragment.followUpInstance(certIdParam);
+                    crlReviewFrag.show(getActivity().getSupportFragmentManager(), "tag");
 
                     Snackbar.make(v, "#" + (nRequired - mViewModel.passwordMap.size()) +" additional password required ", Snackbar.LENGTH_LONG)
                             .setAction("Action", null).show();
@@ -175,9 +217,10 @@ public class ReviewCSRFragment extends DialogFragment {
                     PersistentModel pm = PersistentModel.getInstance();
                     RootCertificateItem rci = pm.findRootByCertId(mViewModel.issuingCertId);
 
+
                     try {
 
-                        X509Certificate cert = cu.signCertificateRequest(rci, mViewModel.passwordMap, mViewModel.csrPEM);
+                        X509CRL crl = cu.signCRL(rci, mViewModel.passwordMap, mViewModel.revokedCertificateList, mViewModel.crlValiditySeconds);
 
                         // delete the precious passwords
                         for( Integer key:mViewModel.passwordMap.keySet()){
@@ -186,12 +229,11 @@ public class ReviewCSRFragment extends DialogFragment {
                         }
                         mViewModel.passwordMap.clear();
 
-                        rci.addIssuedCertList(cert);
+                        rci.setNextCRLUpdate( crl.getNextUpdate());
 
                         pm.persist();
 
-                        String subject = cert.getSubjectDN().getName();
-                        Log.d(TAG, "Certificate signed successfully: " + subject);
+                        Log.d(TAG, "CRL signed successfully, next update: " + crl.getNextUpdate());
 
                         // refresh the cert tree view
                         MainActivity mainActivity = (MainActivity) getActivity();
@@ -200,17 +242,17 @@ public class ReviewCSRFragment extends DialogFragment {
                                 mainActivity.refreshTreeViewData();
                             }catch(IOException ioe) {
                                 Log.e(TAG, "problem reading persistent content ", ioe);
-                                Toast.makeText(mainActivity, "Problem reading persistent aftre creation of CA ...", Toast.LENGTH_LONG).show();
+                                Toast.makeText(mainActivity, "Problem reading persistent after creation of new CRL ...", Toast.LENGTH_LONG).show();
                             }
                         }
 
 
                         dismiss();
 
-                        QRShowFragment qrFrag = QRShowFragment.newInstance(cert.getEncoded(), subject);
+                        QRShowFragment qrFrag = QRShowFragment.newInstance(crl.getEncoded(), "CRL for " + rci.getSubject());
                         qrFrag.show(getActivity().getSupportFragmentManager(), "reviewCSRFragmentTag");
 
-                    } catch (IOException | OperatorCreationException | GeneralSecurityException | PKCSException e) {
+                    } catch (IOException | OperatorCreationException | GeneralSecurityException e) {
                         Log.e(TAG, "Problem signing CSR: ", e);
                         Snackbar.make(v, "Problem signing CSR: " + e.getLocalizedMessage(), Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();

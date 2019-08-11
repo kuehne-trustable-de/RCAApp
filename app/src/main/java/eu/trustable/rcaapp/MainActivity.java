@@ -98,12 +98,27 @@ public class MainActivity extends AppCompatActivity {
             CertificateItem certItem = (CertificateItem) value;
 //            Toast.makeText( node.getViewHolder().getView().getContext(), "Long click: " + certItem.getSubject(), Toast.LENGTH_SHORT).show();
 
-            CertificateInfoFragment certInfoFrag = CertificateInfoFragment.newInstance(certItem.getCertId());
+            RootCertificateInfoFragment certInfoFrag = RootCertificateInfoFragment.newInstance(certItem.getCertId());
             certInfoFrag.show(getSupportFragmentManager(), "tag");
 
             return true;
         }
     };
+
+    private TreeNode.TreeNodeLongClickListener nodeIssuedLongClickListener = new TreeNode.TreeNodeLongClickListener() {
+        @Override
+        public boolean onLongClick(TreeNode node, Object value) {
+            CertificateItem certItem = (CertificateItem) value;
+            Log.d(TAG, "nodeIssuedLongClickListener called for " + certItem);
+            Toast.makeText( node.getViewHolder().getView().getContext(), "Long click: " + certItem.getSubject(), Toast.LENGTH_SHORT).show();
+
+            IssuedCertificateInfoFragment  certInfoFrag = IssuedCertificateInfoFragment .newInstance(certItem.getCertId());
+            certInfoFrag.show(getSupportFragmentManager(), "tag");
+
+            return true;
+        }
+    };
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -165,6 +180,7 @@ public class MainActivity extends AppCompatActivity {
 
                 TreeNode issuingCA = new TreeNode(ici);
                 issuingCA.setViewHolder(new IssuingCertificateItemHolder(this));
+                issuingCA.setLongClickListener(nodeIssuedLongClickListener);
                 rootCA.addChildren(issuingCA);
             }
 

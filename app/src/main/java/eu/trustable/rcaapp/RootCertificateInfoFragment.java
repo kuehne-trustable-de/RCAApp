@@ -19,17 +19,17 @@ import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Locale;
 
-public class CertificateInfoFragment extends DialogFragment {
+public class RootCertificateInfoFragment extends DialogFragment {
 
-    private static final String TAG = "CertificateInfoFragment";
+    private static final String TAG = "RootCertificateInfoFragment";
 
     // the fragment initialization parameter
     private static final String ARG_CertId = "certId";
 
     private String certIdParam;
 
-    public static CertificateInfoFragment newInstance(String certId) {
-        CertificateInfoFragment fragment = new CertificateInfoFragment();
+    public static RootCertificateInfoFragment newInstance(String certId) {
+        RootCertificateInfoFragment fragment = new RootCertificateInfoFragment();
 
         Bundle args = new Bundle();
         args.putString(ARG_CertId, certId);
@@ -51,9 +51,9 @@ public class CertificateInfoFragment extends DialogFragment {
 
         certIdParam = getArguments().getString(ARG_CertId);
         PersistentModel pm = PersistentModel.getInstance();
-        RootCertificateItem rci = pm.findByCertId(certIdParam);
+        RootCertificateItem rci = pm.findRootByCertId(certIdParam);
 
-        final View view = inflater.inflate(R.layout.certificate_info_fragment, container, false);
+        final View view = inflater.inflate(R.layout.root_certificate_info_fragment, container, false);
 
         ((TextView)view.findViewById(R.id.txtCertInfoX500Subject)).setText(rci.getSubject());
         Log.d(TAG, "setting X500 subject to " + rci.getSubject());
@@ -74,6 +74,25 @@ public class CertificateInfoFragment extends DialogFragment {
         }
 
 
+
+        Button btnIssueCRL = (Button) (view.findViewById(R.id.btnIssueCRL));
+        btnIssueCRL.setOnClickListener( new Button.OnClickListener()
+        {
+          @Override
+          public void onClick(View v) {
+              if (getArguments() != null) {
+
+                  dismiss();
+
+                  Log.d(TAG, "building CRL for cert ID " + certIdParam);
+
+                  ReviewCRLFragment crlReviewFrag = ReviewCRLFragment.newInstance(certIdParam);
+                  crlReviewFrag .show(getActivity().getSupportFragmentManager(), "tag");
+              }
+
+          }
+        });
+
         Button btnQR = (Button) (view.findViewById(R.id.btnShowQR));
         btnQR.setOnClickListener( new Button.OnClickListener()
         {
@@ -85,7 +104,7 @@ public class CertificateInfoFragment extends DialogFragment {
                     dismiss();
 
                     PersistentModel pm = PersistentModel.getInstance();
-                    RootCertificateItem rci = pm.findByCertId(certIdParam);
+                    RootCertificateItem rci = pm.findRootByCertId(certIdParam);
                     QRShowFragment qrFrag = QRShowFragment.newInstance(rci.getCert(), rci.getSubject());
                     qrFrag.show(getActivity().getSupportFragmentManager(), "tag");
                 }

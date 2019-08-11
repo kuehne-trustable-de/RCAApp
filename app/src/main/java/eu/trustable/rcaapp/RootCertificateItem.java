@@ -39,6 +39,9 @@ public class RootCertificateItem extends CertificateItem {
     private String privKeyPEM;
 
     @JsonProperty
+    private String signAlgo;
+
+    @JsonProperty
     private QuorumProcessor qp;
 
     @JsonProperty
@@ -49,6 +52,9 @@ public class RootCertificateItem extends CertificateItem {
 
     @JsonProperty
     private List<IssuedCertificateItem> issuedCertList = new ArrayList<IssuedCertificateItem>();
+
+    @JsonProperty
+    Date nextCRLUpdate;
 
     /**
      * allow construction by jackson
@@ -62,9 +68,11 @@ public class RootCertificateItem extends CertificateItem {
         this.M = M;
     }
 
-    public RootCertificateItem(KeyPair kp, X509Certificate cert, int N, int M, Map<Integer, char[]> passwordMap) throws IOException, GeneralSecurityException {
+    public RootCertificateItem(KeyPair kp, X509Certificate cert, int N, int M, Map<Integer, char[]> passwordMap, String signAlgo) throws IOException, GeneralSecurityException {
 
         this(cert, N, M);
+
+        this.signAlgo = signAlgo;
 
         try {
             StringWriter swPem = new StringWriter();
@@ -75,6 +83,8 @@ public class RootCertificateItem extends CertificateItem {
             this.privKeyPEM = keyAsPEM;
 
             this.qp = new QuorumProcessor(N, keyAsPEM.getBytes(), passwordMap);
+
+            nextCRLUpdate = new Date();
 
             Log.d( TAG, "Writing #" +kp.getPrivate().getEncoded().length + " private key bytes as PEM: \n" + this.privKeyPEM);
         } catch (IOException e) {
@@ -107,5 +117,18 @@ public class RootCertificateItem extends CertificateItem {
         byte[] pemKeyBytes = this.qp.getKey(passwordMap);
         return cu.convertPemToPrivateKey(new String(pemKeyBytes));
     }
+
+    public String getSignAlgo() {
+        return signAlgo;
+    }
+
+    public Date getNextCRLUpdate() {
+        return nextCRLUpdate;
+    }
+
+    public void setNextCRLUpdate(Date nextCRLUpdate) {
+        this.nextCRLUpdate = nextCRLUpdate;
+    }
+
 
 }

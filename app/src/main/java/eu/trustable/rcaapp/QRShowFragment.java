@@ -29,6 +29,8 @@ import org.bouncycastle.util.io.pem.PemWriter;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.security.cert.CRLException;
+import java.security.cert.X509CRL;
 
 
 /**
@@ -73,12 +75,32 @@ public class QRShowFragment extends DialogFragment {
         return fragment;
     }
 
+
+
     /**
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param certBytes Parameter 1.
-     * @param certSubject Parameter 2.
+     * @return A new instance of fragment QRShowFragment.
+     */
+    public static QRShowFragment newInstance(X509CRL crl, String issuer ) {
+        QRShowFragment fragment = new QRShowFragment();
+
+        Bundle args = new Bundle();
+
+        CryptoUtil cu = new CryptoUtil();
+        args.putString(ARG_CertPem, cu.crlToPem(crl));
+
+        args.putString(ARG_CertId, issuer);
+        fragment.setArguments(args);
+
+        return fragment;
+    }
+
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
      * @return A new instance of fragment QRShowFragment.
      */
     public static QRShowFragment newInstance(byte[] certBytes, String certSubject ) {
@@ -122,7 +144,7 @@ public class QRShowFragment extends DialogFragment {
             }
             certPem = getArguments().getString(ARG_CertPem);
 //            PersistentModel pm = PersistentModel.getInstance();
-//            RootCertificateItem rci = pm.findByCertId(certSubject);
+//            RootCertificateItem rci = pm.findRootByCertId(certSubject);
 
             TextView txtQR = (TextView) view.findViewById(R.id.txtQRCertificateInfo);
             txtQR.setText(certSubject);

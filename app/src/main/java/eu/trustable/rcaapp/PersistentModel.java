@@ -94,17 +94,41 @@ class PersistentModel implements Serializable {
         return rcList;
     }
 
-    public RootCertificateItem findByCertId(String certId){
+    public RootCertificateItem findRootByCertId(String certId){
         for( RootCertificateItem rci: rcList){
             if( rci.getCertId().equals(certId)){
                 return rci;
             }
         }
+        Log.d(TAG, "no root certificate found for id '" + certId + "'");
         return null;
     }
 
-    public String addKeyAndCertificate(KeyPair kp, X509Certificate cert, int N, int M, Map<Integer, char[]> passwordMap) throws IOException, GeneralSecurityException {
-        RootCertificateItem rci = new RootCertificateItem(kp, cert, N, M, passwordMap);
+    public RootCertificateItem findIssuingRootByCertId(String certId){
+        for( RootCertificateItem rci: rcList){
+            for( IssuedCertificateItem ici: rci.getIssuedCertList()) {
+                if (ici.getCertId().equals(certId)) {
+                    return rci;
+                }
+            }
+        }
+        Log.d(TAG, "no issuing root certificate found for id '" + certId + "'");
+        return null;
+    }
+
+    public IssuedCertificateItem findIssuedByCertId(String certId){
+        for( RootCertificateItem rci: rcList){
+            for( IssuedCertificateItem ici: rci.getIssuedCertList()) {
+                if (ici.getCertId().equals(certId)) {
+                    return ici;
+                }
+            }
+        }
+        Log.d(TAG, "no issued certificate found for id '" + certId + "'");
+        return null;
+    }
+
+    public String addKeyAndCertificate(RootCertificateItem rci) {
         rcList.add(rci);
         return rci.getCertId();
     }

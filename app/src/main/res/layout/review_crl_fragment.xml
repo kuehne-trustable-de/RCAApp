@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:tag="reviewCSRFragmentTag"
+    tools:context=".ReviewCSRFragment">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Issue CRL"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+    <GridLayout
+
+        android:id="@+id/layoutReviewCRLFragment"
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+        android:alignmentMode="alignBounds"
+        android:columnCount="2"
+
+        android:columnOrderPreserved="false"
+        android:useDefaultMargins="true">
+
+        <TextView
+            android:id="@+id/txtCsrCrlIssuer"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="left"
+            android:text="Issuer" />
+
+        <TextView
+            android:id="@+id/txtCrlIssuer"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:layout_gravity="left"
+            android:text="Issuer placeholder" />
+
+
+
+    </GridLayout>
+
+    <GridLayout
+
+        android:id="@+id/layoutReviewCommitterFragment"
+        android:layout_width="match_parent"
+
+        android:layout_height="wrap_content"
+        android:alignmentMode="alignBounds"
+        android:columnCount="2"
+
+        android:columnOrderPreserved="false"
+        android:useDefaultMargins="true">
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Committer" />
+
+        <Spinner
+            android:id="@+id/spinnerCommitterName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_row="0"
+            android:layout_column="1"
+            android:entries="@array/committer_array" />
+
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="0"
+            android:layout_gravity="end"
+            android:text="Password" />
+
+        <EditText
+            android:id="@+id/txtReview_QPW1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_row="1"
+            android:layout_column="1"
+            android:ems="10"
+            android:gravity="start"
+            android:inputType="textPassword"
+            android:text="Quorum member" />
+
+    </GridLayout>
+
+    <TextView
+        android:id="@+id/txtReview_CommiterHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="4dp"
+        android:text="2 additional committer required"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.25" />
+
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.375"
+            android:text="@string/next" />
+
+        <Button
+            android:id="@+id/btnCancel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.375"
+            android:text="@string/cancel" />
+    </LinearLayout>
+</GridLayout>
+

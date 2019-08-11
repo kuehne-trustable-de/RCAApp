@@ -22,13 +22,9 @@ import com.google.android.material.snackbar.Snackbar;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
-import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 
 import eu.trustable.rcaapp.model.NewCsrViewModel;
@@ -113,7 +109,7 @@ public class ScanCSRFragment extends DialogFragment {
                     mViewModel.issuingCertId = certIdParam;
 
                     PersistentModel pm = PersistentModel.getInstance();
-                    mViewModel.issuingCert = pm.findByCertId(certIdParam);
+                    mViewModel.issuingCert = pm.findRootByCertId(certIdParam);
 
 
                     dismiss();

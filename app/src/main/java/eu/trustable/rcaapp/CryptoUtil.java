@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -26,8 +27,11 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.cert.X509CRLHolder;
+import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX500NameUtil;
+import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -69,14 +73,17 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -134,11 +141,7 @@ public class CryptoUtil {
     public X509Certificate buildSelfSignedCertificate(KeyPair pair, X500Name subject, int validityDays, String keyTypeLength)
             throws GeneralSecurityException, OperatorCreationException {
 
-        String signAlg = "SHA256WITHRSA";
-
-        if( "Curve 25519".equals(keyTypeLength)){
-            signAlg = "SHA256WITHECDSA";
-        }
+        String signAlg = getSigningAlgoForKeyType(keyTypeLength);
 
         // create the certificate e.g. using 'SHA256WITHRSA'
         ContentSigner sigGen = new JcaContentSignerBuilder(signAlg).build(pair.getPrivate());
@@ -164,6 +167,15 @@ public class CryptoUtil {
         CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
 
         return (X509Certificate) fact.generateCertificate(bIn);
+    }
+
+    String getSigningAlgoForKeyType(String keyTypeLength) {
+        String signAlg = "SHA256WITHRSA";
+
+        if( "Curve 25519".equals(keyTypeLength)){
+            signAlg = "SHA256WITHECDSA";
+        }
+        return signAlg;
     }
 
     public X509Certificate signCertificateRequest( RootCertificateItem rci, Map<Integer, char[]> passwordMap, String csrPem) throws IOException, GeneralSecurityException, OperatorCreationException, PKCSException {
@@ -207,7 +219,7 @@ public class CryptoUtil {
 
         // retrieve the private key
         PrivateKey privKey = rci.getPrivateKey(passwordMap);
-        ContentSigner sigGen = new JcaContentSignerBuilder(issuerCert.getSigAlgName()).build(privKey);
+        ContentSigner sigGen = new JcaContentSignerBuilder(rci.getSignAlgo()).build(privKey);
 
         byte[] certBytes = certBuilder.build(sigGen).getEncoded();
 
@@ -469,6 +481,52 @@ public class CryptoUtil {
         return (desc);
     }
 
+
+    public static int crlReasonFromString(final String revocationReasonStr) {
+
+        int revReason = IssuedCertificateItem.CRL_REASON_NOT_REVOKED;
+        if ("keyCompromise".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.keyCompromise;
+        } else if ("cACompromise".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.cACompromise;
+        } else if ("affiliationChanged".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.affiliationChanged;
+        } else if ("superseded".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.superseded;
+        } else if ("cessationOfOperation".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.cessationOfOperation;
+        } else if ("privilegeWithdrawn".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.privilegeWithdrawn;
+        } else if ("aACompromise".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.aACompromise;
+        } else if ("unspecified".equalsIgnoreCase(revocationReasonStr)) {
+            revReason = CRLReason.unspecified;
+        }
+        return revReason;
+    }
+
+    public static String crlReasonAsString(final int crlReason) {
+
+        switch( crlReason ){
+            case CRLReason.keyCompromise:
+                return "keyCompromise";
+            case CRLReason.cACompromise:
+                return "cACompromise";
+            case CRLReason.affiliationChanged:
+                return "affiliationChanged";
+            case CRLReason.superseded:
+                return "superseded";
+            case CRLReason.cessationOfOperation:
+                return "cessationOfOperation";
+            case CRLReason.privilegeWithdrawn:
+                return "privilegeWithdrawn";
+            case CRLReason.aACompromise:
+                return "aACompromise";
+            default:
+                return "unspecified";
+        }
+    }
+
 /*
     public PKCS10CertificationRequest convertPemToPKCS10CertificationRequest(String pem) {
 
@@ -618,6 +676,21 @@ public class CryptoUtil {
         return privKey;
     }
 
+    public String crlToPem( X509CRL crl ) {
+        try {
+            StringWriter swPem = new StringWriter();
+            try (PemWriter writer = new PemWriter(swPem)) {
+                writer.writeObject(new PemObject("CRL", crl.getEncoded()));
+            }
+            String certPem = swPem.toString();
+            Log.d(TAG, "writing CRL as PEM:\n" + certPem);
+            return certPem;
+        } catch (IOException | CRLException e) {
+            Log.e(TAG, "problem encoding CRL as QR code", e);
+        } //end of catch block
+
+        return "";
+    }
 
     public String certToPem(byte[] cert) {
         try {
@@ -644,5 +717,45 @@ public class CryptoUtil {
             hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
         }
         return new String(hexChars);
+    }
+
+    public X509CRL signCRL(RootCertificateItem rci, HashMap<Integer,char[]> passwordMap, List<IssuedCertificateItem> revokedCertificates, long validitySeconds) throws GeneralSecurityException, OperatorCreationException {
+
+        Date now = new Date();
+        X509v2CRLBuilder builder = new X509v2CRLBuilder(
+                new X500Name(rci.getSubject()),
+                now
+        );
+
+        Date nextUpdate = new Date(System.currentTimeMillis() + (1000L * validitySeconds));
+        builder.setNextUpdate(nextUpdate);
+
+        for (IssuedCertificateItem ici : revokedCertificates) {
+
+            BigInteger serial = new BigInteger(ici.getCertId(), 16);
+
+            if( ici.isRevocationPending()){
+                ici.setRevocationPending(false);
+                ici.setRevocationDate(now);
+                Log.d(TAG, "adding freshly revoked certificate '"+serial+"' to CRL, setting revocation date to 'now'");
+            }else{
+                Log.d(TAG, "adding revoked certificate '"+serial+"' to CRL, revoked on " + ici.getRevocationDate());
+            }
+
+            builder.addCRLEntry(serial, ici.getRevocationDate(), ici.getRevocationReason());
+        }
+
+        JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder(rci.getSignAlgo());
+
+        contentSignerBuilder.setProvider("BC");
+
+        PrivateKey privKey = rci.getPrivateKey(passwordMap);
+        X509CRLHolder crlHolder = builder.build(contentSignerBuilder.build(privKey));
+
+        JcaX509CRLConverter converter = new JcaX509CRLConverter();
+
+        converter.setProvider("BC");
+
+        return converter.getCRL(crlHolder);
     }
 }

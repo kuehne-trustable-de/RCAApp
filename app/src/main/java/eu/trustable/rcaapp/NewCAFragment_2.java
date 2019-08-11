@@ -26,7 +26,6 @@ import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import de.trustable.ca3s.quorumProcessor.QuorumProcessor;
 import eu.trustable.rcaapp.model.NewCaViewModel;
 
 public class NewCAFragment_2 extends DialogFragment {
@@ -127,14 +126,19 @@ public class NewCAFragment_2 extends DialogFragment {
             CryptoUtil cu = new CryptoUtil();
 
             try {
+
+                String signAlgo = cu.getSigningAlgoForKeyType(mViewModel.keyTypeLength);
+
                 KeyPair kp = cu.createKeyPair(mViewModel.keyTypeLength);
                 Log.d(TAG, "key pair created successfully");
 
                 X509Certificate cert = cu.buildSelfSignedCertificate(kp, mViewModel.x500Subject, mViewModel.validityPeriodDays, mViewModel.keyTypeLength);
                 Log.d(TAG, "certificate created successfully");
 
+                RootCertificateItem rci = new RootCertificateItem(kp, cert, mViewModel.N, mViewModel.M, mViewModel.passwordMap, signAlgo);
+
                 PersistentModel pm = PersistentModel.getInstance();
-                String certId = pm.addKeyAndCertificate(kp, cert, 2, 4, mViewModel.passwordMap);
+                String certId = pm.addKeyAndCertificate(rci);
 
                 pm.persist();
 
@@ -198,7 +202,7 @@ public class NewCAFragment_2 extends DialogFragment {
             String subject = strings[1];
 
             PersistentModel pm = PersistentModel.getInstance();
-            RootCertificateItem rci = pm.findByCertId(certId);
+            RootCertificateItem rci = pm.findRootByCertId(certId);
 
             QRShowFragment qrFrag = QRShowFragment.newInstance(rci.getCert(), subject);
 

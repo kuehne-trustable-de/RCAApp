@@ -11,8 +11,8 @@ public class NewCaViewModel extends ViewModel {
     public String keyTypeLength;
     public int validityPeriodDays = 0;
     public X500Name x500Subject;
-    public int N = 0;
-    public int M = 0;
+    public int N = 2;
+    public int M = 4;
 
     public Map<Integer, char[]> passwordMap;
 

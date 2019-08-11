@@ -5,6 +5,8 @@ import android.util.Log;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.bouncycastle.asn1.x509.CRLReason;
+
 import java.io.Serializable;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -65,4 +67,6 @@ public class CertificateItem implements Serializable {
     public Date getValidUntil() {
         return validUntil;
     }
+
+
 }
