@@ -24,12 +24,6 @@ import com.google.zxing.MultiFormatWriter;
 import com.google.zxing.WriterException;
 import com.google.zxing.common.BitMatrix;
 
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.security.cert.CRLException;
 import java.security.cert.X509CRL;
 
 
@@ -49,7 +43,7 @@ public class QRShowFragment extends DialogFragment {
     private static final String ARG_CertId = "certSubject";
     private static final String ARG_CertPem = "certPem";
 
-    private String certPem;
+    private String certType = "certificate";
     private String certSubject;
 
     private OnFragmentInteractionListener mListener;
@@ -113,6 +107,7 @@ public class QRShowFragment extends DialogFragment {
 
         args.putString(ARG_CertId, certSubject);
         fragment.setArguments(args);
+        fragment.certType = "crl";
 
         return fragment;
     }
@@ -142,7 +137,7 @@ public class QRShowFragment extends DialogFragment {
             }else{
                 certSubject = "---";
             }
-            certPem = getArguments().getString(ARG_CertPem);
+            String certPem = getArguments().getString(ARG_CertPem);
 //            PersistentModel pm = PersistentModel.getInstance();
 //            RootCertificateItem rci = pm.findRootByCertId(certSubject);
 
@@ -152,7 +147,7 @@ public class QRShowFragment extends DialogFragment {
             ImageView imgQR = (ImageView) view.findViewById(R.id.imageQRCertificate);
 
             try {
-                Log.d(TAG, "writing certificate '"+certSubject+"' as PEM:\n" + certPem);
+                Log.d(TAG, "writing "+certType+" '"+certSubject+"' as PEM:\n" + certPem);
 
 //                View decorView = getDialog().getWindow().getDecorView();
 

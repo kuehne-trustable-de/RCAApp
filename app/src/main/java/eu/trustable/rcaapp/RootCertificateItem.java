@@ -14,14 +14,11 @@ import java.io.StringWriter;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-
-import javax.xml.bind.annotation.XmlTransient;
 
 import de.trustable.ca3s.quorumProcessor.QuorumProcessor;
 

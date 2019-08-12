@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
@@ -128,8 +127,6 @@ public class PersistentModelTest {
         File fContent = File.createTempFile("testPersistentModelContent", "json");
         try( FileWriter fw = new FileWriter(fContent)){
             fw.write(SAMPLE_CONTENT);
-        } catch( IOException ioe ){
-
         }
 
         PersistentModel pm = PersistentModel.parseFile(fContent);

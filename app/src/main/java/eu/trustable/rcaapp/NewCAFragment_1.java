@@ -27,12 +27,10 @@ public class NewCAFragment_1 extends DialogFragment {
 
     private static final String TAG = "NewCAFragment_1";
 
-    private NewCaViewModel mViewModel;
-
     public static NewCAFragment_1 newInstance() {
         return new NewCAFragment_1();
 
-         }
+    }
 
 
     @Override
@@ -136,8 +134,6 @@ public class NewCAFragment_1 extends DialogFragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        mViewModel = ViewModelProviders.of(getActivity()).get(NewCaViewModel.class);
-        // TODO: Use the ViewModel
     }
 
 }

@@ -2,12 +2,14 @@ package eu.trustable.rcaapp;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -72,7 +74,8 @@ public class ReviewCRLFragment extends DialogFragment {
             mViewModel.passwordMap = new HashMap<Integer, char[]>();
         }
 
-        GridLayout gridCSRAttributes = (GridLayout)view.findViewById(R.id.layoutReviewCRLFragment);
+        RelativeLayout layoutReviewRevokedCerts = (RelativeLayout)view.findViewById(R.id.LayoutReviewRevokedCerts);
+        GridLayout gridCRLItems = (GridLayout)view.findViewById(R.id.LayoutReviewCRLItems);
 
         CryptoUtil cu = new CryptoUtil();
 
@@ -106,24 +109,41 @@ public class ReviewCRLFragment extends DialogFragment {
             }
 
             Log.d(TAG, "issuing CRL for Cert '" + issuer + "' with " + revokedCerts + " revoked certs, "+ pendingCerts + " pending revocation.");
-/*
-            Map<String, String> reqAttributes = cu.explainCertificateRequestAttributes(mViewModel.csrPEM);
-            Log.d(TAG, "reqAttributes has #" + reqAttributes.size() + " elements");
 
-            gridCSRAttributes.setRowCount(reqAttributes.size() + 1);
+            Log.d(TAG, "CRL will have #" + mViewModel.revokedCertificateList.size() + " elements");
 
-            int row = 1;
-            for (String name:reqAttributes.keySet()) {
+            if(revokedCerts == 0){
+                layoutReviewRevokedCerts.setVisibility(View.GONE);
+            }else{
+                layoutReviewRevokedCerts.setVisibility(View.VISIBLE);
+            }
 
-                TextView attNameText = new TextView(getContext());
-                attNameText.setText(name);
+            gridCRLItems.setRowCount(mViewModel.revokedCertificateList.size());
 
-                TextView attValueText = new TextView(getContext());
-                String attrValue = reqAttributes.get(name);
-                if( attrValue.length() > 50){
-                    attrValue = attrValue.substring(0, 50) + " ...";
+
+            int row = 0;
+            for (IssuedCertificateItem iciRevoked:mViewModel.revokedCertificateList) {
+
+                TextView subjectText = new TextView(getContext());
+
+                String subject = iciRevoked.getSubject();
+                if( subject.length() > 50){
+                    subject = subject.substring(0, 50) + " ...";
                 }
-                attValueText.setText(attrValue);
+
+                subjectText.setText(subject);
+
+                TextView reasonText = new TextView(getContext());
+                String reasonValue = CryptoUtil.crlReasonAsString(iciRevoked.getRevocationReason());
+                if( reasonValue.length() > 50){
+                    reasonValue = reasonValue.substring(0, 50) + " ...";
+                }
+                reasonText.setText(reasonValue);
+
+                TextView revDateText = new TextView(getContext());
+                String revDateValue = android.text.format.DateFormat.getDateFormat(getActivity()).format(iciRevoked.getRevocationDate());
+                revDateText.setText(revDateValue);
+
 
 //                titleText.setCompoundDrawablesWithIntrinsicBounds(rightIc, 0, 0, 0);
 
@@ -138,7 +158,7 @@ public class ReviewCRLFragment extends DialogFragment {
                 // Optional, if you want the text to be centered within the cell
                 layoutParamsName.setGravity(Gravity.LEFT);
 
-                gridCSRAttributes.addView(attNameText, layoutParamsName);
+                gridCRLItems.addView(subjectText, layoutParamsName);
 
                 GridLayout.LayoutParams layoutParamsValue = new GridLayout.LayoutParams();
                 layoutParamsValue.height = GridLayout.LayoutParams.WRAP_CONTENT;
@@ -150,13 +170,25 @@ public class ReviewCRLFragment extends DialogFragment {
 
                 // Optional, if you want the text to be centered within the cell
                 layoutParamsValue.setGravity(Gravity.LEFT);
-                gridCSRAttributes.addView(attValueText, layoutParamsValue);
 
-                Log.d(TAG, "adding row #" + row + " for '" + name + "' : '" + reqAttributes.get(name) + "'");
+                gridCRLItems.addView(reasonText, layoutParamsValue);
+
+                GridLayout.LayoutParams layoutParamsDate = new GridLayout.LayoutParams();
+                layoutParamsDate.height = GridLayout.LayoutParams.WRAP_CONTENT;
+                layoutParamsDate.width = GridLayout.LayoutParams.WRAP_CONTENT;
+
+                // The last parameter in the specs is the weight, which gives equal size to the cells
+                layoutParamsDate.columnSpec = GridLayout.spec(2, 1, 1);
+                layoutParamsDate.rowSpec = GridLayout.spec(row, 1, 1);
+
+                // Optional, if you want the text to be centered within the cell
+                layoutParamsDate.setGravity(Gravity.LEFT);
+                gridCRLItems.addView(revDateText, layoutParamsDate);
+
+                Log.d(TAG, "adding row #" + row + " for '" + subject + "' : '" + reasonText + "' on " + revDateValue);
 
                 row++;
             }
-*/
 
             Spinner committerSpinner = ((Spinner) view.findViewById(R.id.spinnerCommitterName));
 
@@ -249,8 +281,8 @@ public class ReviewCRLFragment extends DialogFragment {
 
                         dismiss();
 
-                        QRShowFragment qrFrag = QRShowFragment.newInstance(crl.getEncoded(), "CRL for " + rci.getSubject());
-                        qrFrag.show(getActivity().getSupportFragmentManager(), "reviewCSRFragmentTag");
+                        QRShowFragment qrFrag = QRShowFragment.newInstance(crl, "CRL for " + rci.getSubject());
+                        qrFrag.show(getActivity().getSupportFragmentManager(), "reviewCRLFragmentTag");
 
                     } catch (IOException | OperatorCreationException | GeneralSecurityException e) {
                         Log.e(TAG, "Problem signing CSR: ", e);

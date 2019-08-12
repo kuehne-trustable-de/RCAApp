@@ -16,8 +16,7 @@ import java.io.ByteArrayInputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.Date;
 
 public class RootCertificateInfoFragment extends DialogFragment {
 
@@ -64,10 +63,16 @@ public class RootCertificateInfoFragment extends DialogFragment {
 
             ((TextView)view.findViewById(R.id.txtCertInfoSerial)).setText(cert.getSerialNumber().toString());
 
-            SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
+            ((TextView)view.findViewById(R.id.txtCertInfoValidFrom)).setText(android.text.format.DateFormat.getDateFormat(getActivity()).format(cert.getNotBefore()));
+            ((TextView)view.findViewById(R.id.txtCertInfoValidTo)).setText(android.text.format.DateFormat.getDateFormat(getActivity()).format(cert.getNotAfter()));
 
-            ((TextView)view.findViewById(R.id.txtCertInfoValidFrom)).setText(df.format(cert.getNotBefore()));
-            ((TextView)view.findViewById(R.id.txtCertInfoValidTo)).setText(df.format(cert.getNotAfter()));
+            Date nextUpdate = rci.getNextCRLUpdate();
+            if( nextUpdate ==  null){
+                nextUpdate = new Date();
+            }
+            ((TextView)view.findViewById(R.id.txtCertInfoCRLExpiry)).setText(android.text.format.DateFormat.getDateFormat(getActivity()).format(nextUpdate));
+
+            ((TextView)view.findViewById(R.id.txtCertInfoNumberOfIssuedCertificates)).setText("" + rci.getIssuedCertList().size());
 
         } catch (CertificateException e) {
             Log.e(TAG, "problem parsing certificate #" + certIdParam, e);

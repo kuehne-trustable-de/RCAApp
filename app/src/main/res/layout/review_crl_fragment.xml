@@ -16,7 +16,7 @@
 
     <GridLayout
 
-        android:id="@+id/layoutReviewCRLFragment"
+        android:id="@+id/LayoutReviewCRLFragment"
         android:layout_width="match_parent"
 
         android:layout_height="wrap_content"
@@ -45,6 +45,44 @@
 
 
     </GridLayout>
+
+    <RelativeLayout
+        android:id="@+id/LayoutReviewRevokedCerts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="false"
+            android:layout_alignParentTop="true"
+            android:layout_margin="10dp"
+            android:background="@drawable/selector_fieldset_background"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingLeft="10dp"
+                android:paddingRight="20dp"
+                android:text="Revoked Certs"
+                android:textAppearance="@style/TextAppearance.AppCompat.Medium" />
+
+            <GridLayout
+                android:id="@+id/LayoutReviewCRLItems"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:alignmentMode="alignBounds"
+                android:columnCount="3"
+                android:columnOrderPreserved="false"
+                android:useDefaultMargins="true">
+
+            </GridLayout>
+        </LinearLayout>
+
+    </RelativeLayout>
 
     <GridLayout
 

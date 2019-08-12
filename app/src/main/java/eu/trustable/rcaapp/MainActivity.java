@@ -22,6 +22,7 @@ import com.unnamed.b.atv.model.TreeNode;
 import com.unnamed.b.atv.view.AndroidTreeView;
 
 import java.io.IOException;
+import java.util.Date;
 
 import eu.trustable.rcaapp.holder.IssuingCertificateItemHolder;
 import eu.trustable.rcaapp.holder.RootCertificateItemHolder;
@@ -192,5 +193,9 @@ public class MainActivity extends AppCompatActivity {
         AndroidTreeView tView = new AndroidTreeView(this, root);
         containerView.removeAllViewsInLayout();
         containerView.addView(tView.getView());
+    }
+
+    String formatDate(Date date){
+        return android.text.format.DateFormat.getDateFormat(this).format(date);
     }
 }

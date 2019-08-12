@@ -11,7 +11,6 @@ import com.unnamed.b.atv.model.TreeNode;
 
 import eu.trustable.rcaapp.IssuedCertificateItem;
 import eu.trustable.rcaapp.R;
-import eu.trustable.rcaapp.RootCertificateItem;
 
 
 /**
@@ -21,8 +20,6 @@ public class IssuingCertificateItemHolder extends TreeNode.BaseNodeViewHolder<Is
 
     private static final String TAG = "IssuingCertificateItemHolder";
 
-    private TextView tvSubject;
-    private TextView tvExpiry;
 
     public IssuingCertificateItemHolder(Context context) {
         super(context);
@@ -33,11 +30,8 @@ public class IssuingCertificateItemHolder extends TreeNode.BaseNodeViewHolder<Is
         final LayoutInflater inflater = LayoutInflater.from(context);
         final View view = inflater.inflate(R.layout.issuing_cert_tree_item, null, false);
 
-        tvSubject = (TextView) view.findViewById(R.id.txtIssuingCertSubject);
-        tvSubject.setText(icItem.getSubject());
-
-        tvExpiry = (TextView) view.findViewById(R.id.txtIssuingCertExpiryDate);
-        tvExpiry.setText(icItem.getValidUntil().toString());
+        ((TextView) view.findViewById(R.id.txtIssuingCertSubject)).setText(icItem.getSubject());
+        ((TextView) view.findViewById(R.id.txtIssuingCertExpiryDate)).setText(android.text.format.DateFormat.getDateFormat( super.context).format(icItem.getValidUntil()));
 
         return view;
     }

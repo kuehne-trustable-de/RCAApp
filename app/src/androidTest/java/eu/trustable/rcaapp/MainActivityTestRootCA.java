@@ -17,8 +17,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.Random;
+
 import static androidx.test.espresso.Espresso.onView;
-import static androidx.test.espresso.Espresso.pressBack;
 import static androidx.test.espresso.action.ViewActions.click;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.action.ViewActions.replaceText;
@@ -40,6 +41,10 @@ public class MainActivityTestRootCA {
 
     @Test
     public void mainActivityTestRootCA() {
+        Random rnd = new Random();
+
+        String caName = "CN=TEST " +  rnd.nextInt(1000) + " trustable Root CA, C=DE";
+
         ViewInteraction floatingActionButton = onView(
                 allOf(withId(R.id.fab),
                         childAtPosition(
@@ -53,10 +58,10 @@ public class MainActivityTestRootCA {
         ViewInteraction appCompatEditText3 = onView(
                 allOf(withId(R.id.txtNewCASubject),
                         isDisplayed()));
-        appCompatEditText3.perform(replaceText("CN=TEST  trustable Root CA, C=DE"),closeSoftKeyboard());
+        appCompatEditText3.perform(replaceText(caName),closeSoftKeyboard());
 
         ViewInteraction appCompatEditText4 = onView(
-                allOf(withId(R.id.txtNewCASubject), withText("CN=TEST  trustable Root CA, C=DE"),
+                allOf(withId(R.id.txtNewCASubject), withText(caName),
                         childAtPosition(
                                 childAtPosition(
                                         withClassName(is("android.widget.GridLayout")),
@@ -89,23 +94,9 @@ public class MainActivityTestRootCA {
 
         ViewInteraction appCompatButton3 = onView(
                 allOf(withId(R.id.buttonQRCancel), withText("Cancel"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(android.R.id.content),
-                                        0),
-                                2),
                         isDisplayed()));
         appCompatButton3.perform(click());
 
-        ViewInteraction textView = onView(
-                allOf(withId(R.id.txtIssuingCertSubject), withText("CN=TEST  trustable Root CA,C=DE"),
-                        childAtPosition(
-                                childAtPosition(
-                                        withId(R.id.node_header),
-                                        0),
-                                1),
-                        isDisplayed()));
-        textView.check(matches(withText("CN=TEST  trustable Root CA,C=DE")));
     }
 
     private static Matcher<View> childAtPosition(

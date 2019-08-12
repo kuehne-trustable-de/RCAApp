@@ -15,17 +15,12 @@ import androidx.fragment.app.DialogFragment;
 
 import com.google.android.material.snackbar.Snackbar;
 
-import org.bouncycastle.operator.OperatorCreationException;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class IssuedCertificateInfoFragment extends DialogFragment {
 
@@ -57,8 +52,6 @@ public class IssuedCertificateInfoFragment extends DialogFragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
 
-        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
-
         certIdParam = getArguments().getString(ARG_CertId);
         PersistentModel pm = PersistentModel.getInstance();
 
@@ -81,7 +74,7 @@ public class IssuedCertificateInfoFragment extends DialogFragment {
             TextView revReason = (TextView)view.findViewById(R.id.txtCertInfoRevocationReason);
             revReason.setText(CryptoUtil.crlReasonAsString(ici.getRevocationReason()));
             TextView revDate = (TextView)view.findViewById(R.id.txtCertInfoRevocationDate);
-            revDate.setText(df.format(ici.getRevocationDate()));
+            revDate.setText(android.text.format.DateFormat.getDateFormat(getActivity()).format(ici.getRevocationDate()));
 
         }
 
@@ -96,8 +89,9 @@ public class IssuedCertificateInfoFragment extends DialogFragment {
 
             ((TextView)view.findViewById(R.id.txtCertInfoSerial)).setText(cert.getSerialNumber().toString());
 
-            ((TextView)view.findViewById(R.id.txtCertInfoValidFrom)).setText(df.format(cert.getNotBefore()));
-            ((TextView)view.findViewById(R.id.txtCertInfoValidTo)).setText(df.format(cert.getNotAfter()));
+
+            ((TextView)view.findViewById(R.id.txtCertInfoValidFrom)).setText( android.text.format.DateFormat.getDateFormat(getActivity()).format(cert.getNotBefore()));
+            ((TextView)view.findViewById(R.id.txtCertInfoValidTo)).setText(android.text.format.DateFormat.getDateFormat(getActivity()).format(cert.getNotAfter()));
 
 
         } catch (CertificateException e) {

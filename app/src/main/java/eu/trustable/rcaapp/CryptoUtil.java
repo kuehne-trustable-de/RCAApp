@@ -1,12 +1,10 @@
 package eu.trustable.rcaapp;
 
-import android.util.Base64;
 import android.util.Log;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERBitString;
@@ -61,6 +59,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
@@ -563,7 +562,7 @@ public class CryptoUtil {
         Log.d(TAG, "converting PEM: " + pem);
 
         PKCS10CertificationRequest csr = null;
-        ByteArrayInputStream pemStream = new ByteArrayInputStream(pem.getBytes("UTF-8"));
+        ByteArrayInputStream pemStream = new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8));
 
         Reader pemReader = new BufferedReader(new InputStreamReader(pemStream));
         PEMParser pemParser = new PEMParser(pemReader);
@@ -615,8 +614,7 @@ public class CryptoUtil {
 
     public X509Certificate getCertificateFromBytes(byte[] certBytes) throws CertificateException {
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
-        return certificate;
+        return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certBytes));
     }
 
     /**
@@ -629,16 +627,7 @@ public class CryptoUtil {
             throws GeneralSecurityException {
 
         PrivateKey privKey = null;
-        ByteArrayInputStream pemStream = null;
-        try {
-            pemStream = new ByteArrayInputStream(pem.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException ex) {
-            Log.e(TAG,"UnsupportedEncodingException, PrivateKey", ex);
-            throw new GeneralSecurityException(
-                    "Parsing of PEM file failed due to encoding problem! Not PEM encoded?");
-        }
-
-        Reader pemReader = new InputStreamReader(pemStream);
+        Reader pemReader = new InputStreamReader(new ByteArrayInputStream(pem.getBytes(StandardCharsets.UTF_8)));
         PEMParser pemParser = new PEMParser(pemReader);
 
         try {
@@ -680,7 +669,7 @@ public class CryptoUtil {
         try {
             StringWriter swPem = new StringWriter();
             try (PemWriter writer = new PemWriter(swPem)) {
-                writer.writeObject(new PemObject("CRL", crl.getEncoded()));
+                writer.writeObject(new PemObject("X509 CRL", crl.getEncoded()));
             }
             String certPem = swPem.toString();
             Log.d(TAG, "writing CRL as PEM:\n" + certPem);

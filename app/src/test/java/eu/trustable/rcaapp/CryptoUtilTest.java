@@ -11,8 +11,6 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.Map;
 
-import static org.junit.Assert.*;
-
 
 public class CryptoUtilTest {
 
