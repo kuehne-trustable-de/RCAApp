@@ -7,16 +7,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.RelativeLayout;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.fragment.app.DialogFragment;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -27,12 +24,10 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509CRL;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 
 import eu.trustable.rcaapp.model.NewCrlViewModel;
 
-public class ReviewCRLFragment extends DialogFragment {
+public class ReviewCRLFragment extends CommitmentFragment {
 
     private static final String TAG = "ReviewCRLFragment";
 
@@ -70,9 +65,6 @@ public class ReviewCRLFragment extends DialogFragment {
         final View view = inflater.inflate(R.layout.review_crl_fragment, container, false);
         final NewCrlViewModel mViewModel = ViewModelProviders.of(getActivity()).get(NewCrlViewModel.class);
         mViewModel.issuingCertId = certIdParam;
-        if( initPasswordMap ) {
-            mViewModel.passwordMap = new HashMap<Integer, char[]>();
-        }
 
         RelativeLayout layoutReviewRevokedCerts = (RelativeLayout)view.findViewById(R.id.LayoutReviewRevokedCerts);
         GridLayout gridCRLItems = (GridLayout)view.findViewById(R.id.LayoutReviewCRLItems);
@@ -190,23 +182,8 @@ public class ReviewCRLFragment extends DialogFragment {
                 row++;
             }
 
-            Spinner committerSpinner = ((Spinner) view.findViewById(R.id.spinnerCommitterName));
+            initCommitterView(view, mViewModel, initPasswordMap);
 
-            selectSpinnerItemByValue(committerSpinner, "2");
-
-            int nRequired = mViewModel.issuingCert.getN();
-            int stillNeeded = nRequired - mViewModel.passwordMap.size();
-
-            Log.d(TAG, "nRequired : "+nRequired+", stillNeeded : " + stillNeeded);
-
-            TextView committerHintText = (TextView) view.findViewById(R.id.txtReview_CommiterHint);
-            String hintText = stillNeeded + " additional committers required";
-            if (stillNeeded == 1) {
-                hintText = "final committer";
-            }
-            committerHintText.setText(hintText);
-
-//        } catch (IOException |OperatorCreationException | GeneralSecurityException |PKCSException e) {
         } catch(Exception e ){
             e.printStackTrace();
         }
@@ -218,48 +195,25 @@ public class ReviewCRLFragment extends DialogFragment {
             @Override
             public void onClick(View v) {
 
-                Spinner committerSpinner = ((Spinner)view.findViewById(R.id.spinnerCommitterName));
-                TextView textCommitterView = (TextView)committerSpinner.getSelectedView();
-                int nCommitter = Integer.parseInt( textCommitterView.getText().toString()) - 1; // temp tweak !!
-
-                String pw = ((EditText)view.findViewById(R.id.txtReview_QPW1)).getText().toString();
-                if( pw.trim().length() > 0){
-
-                    Log.d(TAG, "adding to password map '" + nCommitter + "' / '" +pw+ "'");
-                    mViewModel.passwordMap.put(nCommitter, pw.toCharArray());
-                }
-
-                int nRequired = mViewModel.issuingCert.getN();
-                Log.d(TAG, "nRequired : "+nRequired+", password map length : " + mViewModel.passwordMap.size());
-                if( mViewModel.passwordMap.size() < nRequired) {
-
+                boolean needMore = additionalCommitmentRequired(view, mViewModel);
+                if( needMore){
                     dismiss();
 
                     ReviewCRLFragment crlReviewFrag = ReviewCRLFragment.followUpInstance(certIdParam);
                     crlReviewFrag.show(getActivity().getSupportFragmentManager(), "tag");
 
-                    Snackbar.make(v, "#" + (nRequired - mViewModel.passwordMap.size()) +" additional password required ", Snackbar.LENGTH_LONG)
-                            .setAction("Action", null).show();
-
                 }else{
 
-                    Log.d(TAG, "quorum of #" + nRequired + " reached!");
                     CryptoUtil cu = new CryptoUtil();
 
                     PersistentModel pm = PersistentModel.getInstance();
                     RootCertificateItem rci = pm.findRootByCertId(mViewModel.issuingCertId);
 
-
                     try {
 
                         X509CRL crl = cu.signCRL(rci, mViewModel.passwordMap, mViewModel.revokedCertificateList, mViewModel.crlValiditySeconds);
 
-                        // delete the precious passwords
-                        for( Integer key:mViewModel.passwordMap.keySet()){
-                            char[] pwClear = mViewModel.passwordMap.get(key);
-                            Arrays.fill(pwClear, (char)0);
-                        }
-                        mViewModel.passwordMap.clear();
+                        clearPasswords(mViewModel.passwordMap);
 
                         rci.setNextCRLUpdate( crl.getNextUpdate());
 
@@ -313,7 +267,7 @@ public class ReviewCRLFragment extends DialogFragment {
         // TODO: Use the ViewModel
 
     }
-
+/*
     public static void selectSpinnerItemByValue(Spinner spinner, String value) {
         for (int i = 0; i < spinner.getCount(); i++) {
             if (spinner.getItemAtPosition(i).equals(value)) {
@@ -322,4 +276,6 @@ public class ReviewCRLFragment extends DialogFragment {
             }
         }
     }
+*/
+
 }
